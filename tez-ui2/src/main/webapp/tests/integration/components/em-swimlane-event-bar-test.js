@@ -16,26 +16,28 @@
  * limitations under the License.
  */
 
-// Prerequisites
-@import "colors";
-@import "shared";
+import { moduleForComponent, test } from 'ember-qunit';
+import hbs from 'htmlbars-inline-precompile';
 
-@import "tooltip";
+import Process from 'tez-ui/utils/process';
 
-// Components
-@import "tab-n-refresh";
-@import "dags-page-search";
-@import "table-controls";
-@import "error-bar";
-@import "caller-info";
-@import "date-formatter";
-@import "em-swimlane";
+moduleForComponent('em-swimlane-event-bar', 'Integration | Component | em swimlane event bar', {
+  integration: true
+});
 
-// Modals
-@import "column-selector";
-@import "zip-download-modal";
+test('Basic creation test', function(assert) {
+  this.set("process", Process.create());
 
-// Pages
-@import "page-layout";
-@import "details-page";
-@import "swimlane-page";
+  this.render(hbs`{{em-swimlane-event-bar process=process}}`);
+
+  assert.equal(this.$().text().trim(), '');
+
+  // Template block usage:" + EOL +
+  this.render(hbs`
+    {{#em-swimlane-event-bar process=process}}
+      template block text
+    {{/em-swimlane-event-bar}}
+  `);
+
+  assert.equal(this.$().text().trim(), '');
+});

@@ -16,26 +16,29 @@
  * limitations under the License.
  */
 
-// Prerequisites
-@import "colors";
-@import "shared";
+import Ember from 'ember';
 
-@import "tooltip";
+export default Ember.Component.extend({
 
-// Components
-@import "tab-n-refresh";
-@import "dags-page-search";
-@import "table-controls";
-@import "error-bar";
-@import "caller-info";
-@import "date-formatter";
-@import "em-swimlane";
+  process: null,
+  event: null,
 
-// Modals
-@import "column-selector";
-@import "zip-download-modal";
+  classNames: ["em-swimlane-event"],
 
-// Pages
-@import "page-layout";
-@import "details-page";
-@import "swimlane-page";
+  didInsertElement: Ember.observer("event.pos", function () {
+    var color = this.get("process").getColor();
+
+    this.$().css({
+      "left": this.get("event.pos") + "%"
+    });
+    this.$(".event-line").css("border-color", color);
+    this.$(".event-bubble").css("border-color", color);
+  }),
+
+  actions: {
+    showTooltip: function () {
+      console.log(this.get("event.name"));
+    }
+  }
+
+});

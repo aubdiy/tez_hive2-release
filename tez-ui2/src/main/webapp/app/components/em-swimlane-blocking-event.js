@@ -18,39 +18,33 @@
 
 import Ember from 'ember';
 
-import ParentController from './parent';
+export default Ember.Component.extend({
 
-export default ParentController.extend({
-  breadcrumbs: Ember.computed("model", function () {
-    var name = this.get("model.name");
+  process: null,
+  blocking: null,
+  events: null,
 
-    return [{
-      text: `DAG [ ${name} ]`,
-      routeName: "dag.index.index",
-      model: this.get("model.entityID")
-    }];
+  classNames: ["em-swimlane-blocking-event"],
+
+  blockingEvent: Ember.computed("events.length", "process.blockingEventName", function () {
+    var events = this.get("events"),
+        blockingEventName = this.get("process.blockingEventName");
+
+    return events.find(function (event) {
+      return event.name === blockingEventName;
+    });
   }),
 
-  tabs: [{
-    text: "DAG Details",
-    routeName: "dag.index.index"
-  }, {
-    text: "DAG Counters",
-    routeName: "dag.counters"
-  }, {
-    text: "Graphical View",
-    routeName: "dag.graphical"
-  }, {
-    text: "All Vertices",
-    routeName: "dag.vertices"
-  }, {
-    text: "All Tasks",
-    routeName: "dag.tasks"
-  }, {
-    text: "All Task Attempts",
-    routeName: "dag.attempts"
-  }, {
-    text: "Vertex Swimlane",
-    routeName: "dag.swimlane"
-  }]
+  didInsertElement: Ember.observer("blockingEvent", function () {
+    var blockerEventHeight = (this.get("blocking.index") - this.get("process.index")) * 30;
+
+    this.$().css({
+      "left": this.get("blockingEvent.pos") + "%"
+    });
+    this.$(".event-line").css({
+      "height": `${blockerEventHeight}px`,
+      "border-color": this.get("process").getColor()
+    });
+  }),
+
 });
