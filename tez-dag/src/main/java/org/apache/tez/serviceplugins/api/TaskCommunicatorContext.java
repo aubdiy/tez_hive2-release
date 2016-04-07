@@ -38,6 +38,7 @@ import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.tez.dag.api.TezException;
 import org.apache.tez.dag.api.event.VertexState;
 import org.apache.tez.dag.records.TezTaskAttemptID;
+import org.apache.tez.runtime.api.TaskFailureType;
 
 
 // Do not make calls into this from within a held lock.
@@ -69,7 +70,7 @@ public interface TaskCommunicatorContext extends ServicePluginContextBase {
    *
    * @return credentials
    */
-  Credentials getCredentials();
+  Credentials getAMCredentials();
 
   /**
    * Check whether a running attempt can commit. This provides a leader election mechanism amongst
@@ -146,11 +147,13 @@ public interface TaskCommunicatorContext extends ServicePluginContextBase {
    * attempts left.
    *
    * @param taskAttemptId        the relevant task attempt id
+   * @param taskFailureType      the type of the error
    * @param taskAttemptEndReason the reason for the task failure
    * @param diagnostics          any diagnostics messages which are relevant to the task attempt
    *                             failure
    */
-  void taskFailed(TezTaskAttemptID taskAttemptId, TaskAttemptEndReason taskAttemptEndReason,
+  void taskFailed(TezTaskAttemptID taskAttemptId, TaskFailureType taskFailureType,
+                  TaskAttemptEndReason taskAttemptEndReason,
                   @Nullable String diagnostics);
 
   /**
@@ -165,30 +168,11 @@ public interface TaskCommunicatorContext extends ServicePluginContextBase {
    */
   void registerForVertexStateUpdates(String vertexName, @Nullable Set<VertexState> stateSet);
 
-  // TODO TEZ-3120 Remove deprecated methods
-  /**
-   * Get the name of the currently executing dag
-   *
-   * @return the name of the currently executing dag
-   * @deprecated replaced by {@link TaskCommunicatorContext#getCurrentDagInfo}
-   */
-  @Deprecated
-  String getCurrentDagName();
-
   /**
    * Get an identifier for the executing context of the DAG.
    * @return a String identifier for the exeucting context.
    */
   String getCurrentAppIdentifier();
-
-  // TODO TEZ-3120 Remove deprecated methods
-  /**
-   * Get the identifier for the currently executing dag.
-   * @return a numerical identifier for the currently running DAG. This is unique within the currently running application.
-   * @deprecated replaced by {@link TaskCommunicatorContext#getCurrentDagInfo}
-   */
-  @Deprecated
-  int getCurrentDagIdenitifer();
 
   /**
    * Get the name of the Input vertices for the specified vertex.

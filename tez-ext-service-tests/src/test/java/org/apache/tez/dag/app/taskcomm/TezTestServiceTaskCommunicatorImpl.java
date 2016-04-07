@@ -29,6 +29,7 @@ import org.apache.hadoop.security.Credentials;
 import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.api.records.LocalResource;
+import org.apache.tez.runtime.api.TaskFailureType;
 import org.apache.tez.serviceplugins.api.ContainerEndReason;
 import org.apache.tez.serviceplugins.api.TaskAttemptEndReason;
 import org.apache.tez.serviceplugins.api.TaskCommunicatorContext;
@@ -157,8 +158,8 @@ public class TezTestServiceTaskCommunicatorImpl extends TezTaskCommunicatorImpl 
                     TaskAttemptEndReason.EXECUTOR_BUSY, "Service Busy");
               } else {
                 getContext()
-                    .taskFailed(taskSpec.getTaskAttemptID(), TaskAttemptEndReason.OTHER,
-                        t.toString());
+                    .taskFailed(taskSpec.getTaskAttemptID(), TaskFailureType.NON_FATAL,
+                        TaskAttemptEndReason.OTHER, t.toString());
               }
             } else {
               if (t instanceof IOException) {
@@ -166,8 +167,8 @@ public class TezTestServiceTaskCommunicatorImpl extends TezTaskCommunicatorImpl 
                     TaskAttemptEndReason.COMMUNICATION_ERROR, "Communication Error");
               } else {
                 getContext()
-                    .taskFailed(taskSpec.getTaskAttemptID(), TaskAttemptEndReason.OTHER,
-                        t.getMessage());
+                    .taskFailed(taskSpec.getTaskAttemptID(), TaskFailureType.NON_FATAL,
+                        TaskAttemptEndReason.OTHER, t.getMessage());
               }
             }
           }
@@ -190,11 +191,11 @@ public class TezTestServiceTaskCommunicatorImpl extends TezTaskCommunicatorImpl 
     builder.setAmPort(getAddress().getPort());
     Credentials taskCredentials = new Credentials();
     // Credentials can change across DAGs. Ideally construct only once per DAG.
-    taskCredentials.addAll(getContext().getCredentials());
+    taskCredentials.addAll(getContext().getAMCredentials());
 
     ByteBuffer credentialsBinary = credentialMap.get(taskSpec.getDAGName());
     if (credentialsBinary == null) {
-      credentialsBinary = serializeCredentials(getContext().getCredentials());
+      credentialsBinary = serializeCredentials(getContext().getAMCredentials());
       credentialMap.putIfAbsent(taskSpec.getDAGName(), credentialsBinary.duplicate());
     } else {
       credentialsBinary = credentialsBinary.duplicate();

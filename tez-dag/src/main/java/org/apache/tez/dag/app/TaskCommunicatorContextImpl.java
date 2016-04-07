@@ -29,6 +29,7 @@ import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.tez.dag.api.UserPayload;
 import org.apache.tez.dag.app.rm.container.AMContainer;
+import org.apache.tez.runtime.api.TaskFailureType;
 import org.apache.tez.serviceplugins.api.DagInfo;
 import org.apache.tez.serviceplugins.api.ServicePluginError;
 import org.apache.tez.serviceplugins.api.TaskAttemptEndReason;
@@ -82,7 +83,7 @@ public class TaskCommunicatorContextImpl implements TaskCommunicatorContext, Ver
   }
 
   @Override
-  public Credentials getCredentials() {
+  public Credentials getAMCredentials() {
     return context.getAppCredentials();
   }
 
@@ -132,10 +133,11 @@ public class TaskCommunicatorContextImpl implements TaskCommunicatorContext, Ver
   }
 
   @Override
-  public void taskFailed(TezTaskAttemptID taskAttemptId, TaskAttemptEndReason taskAttemptEndReason,
+  public void taskFailed(TezTaskAttemptID taskAttemptId, TaskFailureType taskFailureType,
+                         TaskAttemptEndReason taskAttemptEndReason,
                          @Nullable String diagnostics) {
-    taskCommunicatorManager.taskFailed(taskAttemptId, taskAttemptEndReason, diagnostics);
-
+    taskCommunicatorManager
+        .taskFailed(taskAttemptId, taskFailureType, taskAttemptEndReason, diagnostics);
   }
 
   @Override
@@ -146,21 +148,9 @@ public class TaskCommunicatorContextImpl implements TaskCommunicatorContext, Ver
         this);
   }
 
-  @SuppressWarnings("deprecation")
-  @Override
-  public String getCurrentDagName() {
-    return getDag().getName();
-  }
-
   @Override
   public String getCurrentAppIdentifier() {
     return context.getApplicationID().toString();
-  }
-
-  @SuppressWarnings("deprecation")
-  @Override
-  public int getCurrentDagIdenitifer() {
-    return getDag().getID().getId();
   }
 
   @Nullable
