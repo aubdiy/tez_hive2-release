@@ -4,12 +4,14 @@ Apache Tez Change Log
 Release 0.8.3: Unreleased
 
 INCOMPATIBLE CHANGES
+  TEZ-3180. Update master docs to declare hadoop-2.6.x as a minimum requirement.
   TEZ-3029. Add an onError method to service plugin contexts.
   TEZ-3120. Remove TaskCommContext.getCurrentDagName, Identifier.
   TEZ-3183. Change the taskFailed method on plugin contexts to specify the type of failure.
   TEZ-3199. Rename getCredentials in TaskCommunicatorContext to be less confusing.
 
 ALL CHANGES:
+  TEZ-3188. Move tez.submit.hosts out of TezConfiguration to TezConfigurationConstants.
   TEZ-3194. Tez UI: Swimlane improve in-progress experience.
   TEZ-3196. java.lang.InternalError from decompression codec is fatal to a task during shuffle
   TEZ-3161. Allow task to report different kinds of errors - fatal / kill.
@@ -425,6 +427,7 @@ INCOMPATIBLE CHANGES
   TEZ-2949. Allow duplicate dag names within session for Tez.
 
 ALL CHANGES:
+  TEZ-3188. Move tez.submit.hosts out of TezConfiguration to TezConfigurationConstants.
   TEZ-3196. java.lang.InternalError from decompression codec is fatal to a task during shuffle
   TEZ-3177. Non-DAG events should use the session domain or no domain if the data does not need protection.
   TEZ-3192. IFile#checkState creating unnecessary objects though auto-boxing
