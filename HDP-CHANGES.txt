@@ -36,6 +36,7 @@ IMPROVEMENTS
 
 BUG FIXES
 
+  TEZ-3245 (TEZ-3207). Data race between addKnowInput and clearAndGetOnepartition of InputHost
   TEZ-3719. (BUG-80738) DAGImpl.computeProgress slows down dispatcher and ipc threads (Gopal V via jeagles)
   TEZ-3644. (BUG-76200) Cleanup container list stored in AMNode. (sseth)
   TEZ-3643. (BUG-76200) Long running AMs can go out of memory due to retained AMContainer instances. (sseth)
