@@ -32,12 +32,15 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -49,6 +52,8 @@ import org.apache.tez.runtime.api.TaskFailureType;
 import org.apache.tez.runtime.api.events.VertexManagerEvent;
 import org.apache.tez.runtime.library.shuffle.impl.ShuffleUserPayloads;
 import org.apache.tez.runtime.library.shuffle.impl.ShuffleUserPayloads.VertexManagerEventPayloadProto;
+import org.apache.tez.runtime.library.utils.DATA_RANGE_IN_MB;
+import org.roaringbitmap.RoaringBitmap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.hadoop.conf.Configurable;
@@ -200,7 +205,7 @@ public class TestUnorderedPartitionedKVWriter {
   }
 
   @Test(timeout = 10000)
-  public void testNoSpill_SinglPartition() throws IOException, InterruptedException {
+  public void testNoSpill_SinglePartition() throws IOException, InterruptedException {
     baseTest(10, 1, null, shouldCompress);
   }
 
@@ -225,7 +230,7 @@ public class TestUnorderedPartitionedKVWriter {
     textTest(0, 10, 2048, 0, 0, 10, false);
   }
 
-  @Test(timeout = 10000)
+  @Test//(timeout = 10000)
   public void testTextMixedRecords() throws IOException, InterruptedException {
     textTest(100, 10, 2048, 10, 10, 10, false);
   }
@@ -353,20 +358,24 @@ public class TestUnorderedPartitionedKVWriter {
       return;
     }
 
-    // Validate the event
-    assertEquals(1, events.size());
-    assertTrue(events.get(0) instanceof CompositeDataMovementEvent);
-    CompositeDataMovementEvent cdme = (CompositeDataMovementEvent) events.get(0);
+    // Validate the events
+    assertEquals(2, events.size());
+
+    assertTrue(events.get(0) instanceof VertexManagerEvent);
+    VertexManagerEvent vme = (VertexManagerEvent) events.get(0);
+    verifyPartitionStats(vme, partitionsWithData);
+
+    assertTrue(events.get(1) instanceof CompositeDataMovementEvent);
+    CompositeDataMovementEvent cdme = (CompositeDataMovementEvent) events.get(1);
     assertEquals(0, cdme.getSourceIndexStart());
     assertEquals(numPartitions, cdme.getCount());
     DataMovementEventPayloadProto eventProto = DataMovementEventPayloadProto.parseFrom(
-        ByteString.copyFrom(cdme
-            .getUserPayload()));
+        ByteString.copyFrom(cdme.getUserPayload()));
     BitSet emptyPartitionBits = null;
     if (partitionsWithData.cardinality() != numPartitions) {
       assertTrue(eventProto.hasEmptyPartitions());
-      byte[] emptyPartitions = TezCommonUtils.decompressByteStringToByteArray(eventProto
-          .getEmptyPartitions());
+      byte[] emptyPartitions = TezCommonUtils.decompressByteStringToByteArray(
+          eventProto.getEmptyPartitions());
       emptyPartitionBits = TezUtilsInternal.fromByteArray(emptyPartitions);
       assertEquals(numPartitions - partitionsWithData.cardinality(),
           emptyPartitionBits.cardinality());
@@ -419,6 +428,43 @@ public class TestUnorderedPartitionedKVWriter {
       expectedValues.remove(i);
     }
     assertEquals(0, expectedValues.size());
+  }
+
+  private long[] getPartitionStats(
+      VertexManagerEvent vme) throws IOException {
+    RoaringBitmap partitionStats = new RoaringBitmap();
+    ShuffleUserPayloads.VertexManagerEventPayloadProto
+        payload = ShuffleUserPayloads.VertexManagerEventPayloadProto
+        .parseFrom(ByteString.copyFrom(vme.getUserPayload()));
+    assertTrue(payload.hasPartitionStats());
+    ByteString compressedPartitionStats = payload.getPartitionStats();
+    byte[] rawData = TezCommonUtils.decompressByteStringToByteArray(
+        compressedPartitionStats);
+    ByteArrayInputStream bin = new ByteArrayInputStream(rawData);
+    partitionStats.deserialize(new DataInputStream(bin));
+    long[] stats = new long[partitionStats.getCardinality()];
+    Iterator<Integer> it = partitionStats.iterator();
+    final DATA_RANGE_IN_MB[] RANGES = DATA_RANGE_IN_MB.values();
+    final int RANGE_LEN = RANGES.length;
+    while (it.hasNext()) {
+      int pos = it.next();
+      int index = ((pos) / RANGE_LEN);
+      int rangeIndex = ((pos) % RANGE_LEN);
+      if (RANGES[rangeIndex].getSizeInMB() > 0) {
+        stats[index] += RANGES[rangeIndex].getSizeInMB();
+      }
+    }
+    return stats;
+  }
+
+  private void verifyPartitionStats(VertexManagerEvent vme,
+      BitSet expectedPartitionsWithData) throws IOException {
+    long[] stats = getPartitionStats(vme);
+    for (int i = 0; i < stats.length; i++) {
+      // The stats should be greater than zero if and only if
+      // the partition has data
+      assertTrue(expectedPartitionsWithData.get(i) == (stats[i] > 0));
+    }
   }
 
   @Test(timeout = 10000)
@@ -486,6 +532,7 @@ public class TestUnorderedPartitionedKVWriter {
     int sizePerRecord = 4 + 8; // IntW + LongW
     int sizePerRecordWithOverhead = sizePerRecord + 12; // Record + META_OVERHEAD
 
+    BitSet partitionsWithData = new BitSet(numPartitions);
     IntWritable intWritable = new IntWritable();
     LongWritable longWritable = new LongWritable();
     for (int i = 0; i < numRecords; i++) {
@@ -495,6 +542,7 @@ public class TestUnorderedPartitionedKVWriter {
       if (skippedPartitions != null && skippedPartitions.contains(partition)) {
         continue;
       }
+      partitionsWithData.set(partition);
       kvWriter.write(intWritable, longWritable);
       numRecordsWritten++;
     }
@@ -503,33 +551,52 @@ public class TestUnorderedPartitionedKVWriter {
     int numExpectedSpills = numRecordsWritten / recordsPerBuffer;
 
     ArgumentCaptor<List> eventCaptor = ArgumentCaptor.forClass(List.class);
-    List<Event> events = kvWriter.close();
-    assertTrue(events.size() == 0); //no events are sent to kvWriter upon close with pipelining
-
+    List<Event> lastEvents = kvWriter.close();
+    //no events are sent to kvWriter upon close with pipelining
+    assertTrue(lastEvents.size() == 0);
     verify(outputContext, atLeast(numExpectedSpills)).sendEvents(eventCaptor.capture());
-    events = eventCaptor.getValue();
+    int numOfCapturedEvents = eventCaptor.getAllValues().size();
+    lastEvents = eventCaptor.getAllValues().get(numOfCapturedEvents - 1);
+    VertexManagerEvent VMEvent = (VertexManagerEvent)lastEvents.get(0);
 
-    assertTrue(events.size() == 1); //the last event which was sent out
+    for (int i=0; i<numOfCapturedEvents; i++) {
+      List<Event> events = eventCaptor.getAllValues().get(i);
+      if (i < numOfCapturedEvents - 1) {
+        assertTrue(events.size() == 1);
+        assertTrue(events.get(0) instanceof CompositeDataMovementEvent);
+      } else {
+        assertTrue(events.size() == 2);
+        assertTrue(events.get(0) instanceof VertexManagerEvent);
+        assertTrue(events.get(1) instanceof CompositeDataMovementEvent);
+      }
+    }
+    verifyPartitionStats(VMEvent, partitionsWithData);
 
-    verify(outputContext, never()).reportFailure(any(TaskFailureType.class), any(Throwable.class), any(String.class));
+    verify(outputContext, never()).reportFailure(any(TaskFailureType.class),
+        any(Throwable.class), any(String.class));
 
     assertNull(kvWriter.currentBuffer);
     assertEquals(0, kvWriter.availableBuffers.size());
 
     // Verify the counters
-    TezCounter outputRecordBytesCounter = counters.findCounter(TaskCounter.OUTPUT_BYTES);
-    TezCounter outputRecordsCounter = counters.findCounter(TaskCounter.OUTPUT_RECORDS);
-    TezCounter outputBytesWithOverheadCounter = counters
-        .findCounter(TaskCounter.OUTPUT_BYTES_WITH_OVERHEAD);
-    TezCounter fileOutputBytesCounter = counters.findCounter(TaskCounter.OUTPUT_BYTES_PHYSICAL);
-    TezCounter spilledRecordsCounter = counters.findCounter(TaskCounter.SPILLED_RECORDS);
+    TezCounter outputRecordBytesCounter =
+        counters.findCounter(TaskCounter.OUTPUT_BYTES);
+    TezCounter outputRecordsCounter =
+        counters.findCounter(TaskCounter.OUTPUT_RECORDS);
+    TezCounter outputBytesWithOverheadCounter =
+        counters.findCounter(TaskCounter.OUTPUT_BYTES_WITH_OVERHEAD);
+    TezCounter fileOutputBytesCounter =
+        counters.findCounter(TaskCounter.OUTPUT_BYTES_PHYSICAL);
+    TezCounter spilledRecordsCounter =
+        counters.findCounter(TaskCounter.SPILLED_RECORDS);
     TezCounter additionalSpillBytesWritternCounter = counters
         .findCounter(TaskCounter.ADDITIONAL_SPILLS_BYTES_WRITTEN);
     TezCounter additionalSpillBytesReadCounter = counters
         .findCounter(TaskCounter.ADDITIONAL_SPILLS_BYTES_READ);
     TezCounter numAdditionalSpillsCounter = counters
         .findCounter(TaskCounter.ADDITIONAL_SPILL_COUNT);
-    assertEquals(numRecordsWritten * sizePerRecord, outputRecordBytesCounter.getValue());
+    assertEquals(numRecordsWritten * sizePerRecord,
+        outputRecordBytesCounter.getValue());
     assertEquals(numRecordsWritten, outputRecordsCounter.getValue());
     assertEquals(numRecordsWritten * sizePerRecordWithOverhead,
         outputBytesWithOverheadCounter.getValue());
@@ -542,8 +609,10 @@ public class TestUnorderedPartitionedKVWriter {
     } else {
       assertEquals(0, fileOutputBytes);
     }
-    assertEquals(recordsPerBuffer * numExpectedSpills, spilledRecordsCounter.getValue());
-    long additionalSpillBytesWritten = additionalSpillBytesWritternCounter.getValue();
+    assertEquals(recordsPerBuffer * numExpectedSpills,
+        spilledRecordsCounter.getValue());
+    long additionalSpillBytesWritten =
+        additionalSpillBytesWritternCounter.getValue();
     long additionalSpillBytesRead = additionalSpillBytesReadCounter.getValue();
 
     //No additional spill bytes written when final merge is disabled.
@@ -556,20 +625,22 @@ public class TestUnorderedPartitionedKVWriter {
     assertEquals(numAdditionalSpillsCounter.getValue(), 0);
 
     BitSet emptyPartitionBits = null;
-    assertTrue(events.size() > 0);
+    assertTrue(lastEvents.size() > 0);
     //Get the last event
-    int index = events.size() - 1;
-    assertTrue(events.get(index) instanceof CompositeDataMovementEvent);
-    CompositeDataMovementEvent cdme = (CompositeDataMovementEvent) events.get(index);
+    int index = lastEvents.size() - 1;
+    assertTrue(lastEvents.get(index) instanceof CompositeDataMovementEvent);
+    CompositeDataMovementEvent cdme =
+        (CompositeDataMovementEvent)lastEvents.get(index);
     assertEquals(0, cdme.getSourceIndexStart());
     assertEquals(numOutputs, cdme.getCount());
     DataMovementEventPayloadProto eventProto =
-        DataMovementEventPayloadProto.parseFrom(ByteString.copyFrom(cdme.getUserPayload()));
+        DataMovementEventPayloadProto.parseFrom(
+            ByteString.copyFrom(cdme.getUserPayload()));
     //Ensure that this is the last event
     assertTrue(eventProto.getLastEvent());
     if (eventProto.hasEmptyPartitions()) {
-      byte[] emptyPartitions = TezCommonUtils.decompressByteStringToByteArray(eventProto
-          .getEmptyPartitions());
+      byte[] emptyPartitions = TezCommonUtils.decompressByteStringToByteArray(
+          eventProto.getEmptyPartitions());
       emptyPartitionBits = TezUtilsInternal.fromByteArray(emptyPartitions);
       if (numRecordsWritten == 0) {
         assertEquals(numPartitions, emptyPartitionBits.cardinality());
@@ -647,6 +718,7 @@ public class TestUnorderedPartitionedKVWriter {
 
     IntWritable intWritable = new IntWritable();
     LongWritable longWritable = new LongWritable();
+    BitSet partitionsWithData = new BitSet(numPartitions);
     for (int i = 0; i < numRecords; i++) {
       intWritable.set(i);
       longWritable.set(i);
@@ -654,6 +726,7 @@ public class TestUnorderedPartitionedKVWriter {
       if (skippedPartitions != null && skippedPartitions.contains(partition)) {
         continue;
       }
+      partitionsWithData.set(partition);
       expectedValues.get(partition).put(intWritable.get(), longWritable.get());
       kvWriter.write(intWritable, longWritable);
       numRecordsWritten++;
@@ -714,10 +787,13 @@ public class TestUnorderedPartitionedKVWriter {
     assertEquals(numExpectedSpills, numAdditionalSpillsCounter.getValue());
 
     BitSet emptyPartitionBits = null;
-    // Verify the event returned
-    assertEquals(1, events.size());
-    assertTrue(events.get(0) instanceof CompositeDataMovementEvent);
-    CompositeDataMovementEvent cdme = (CompositeDataMovementEvent) events.get(0);
+    // Verify the events returned
+    assertEquals(2, events.size());
+    assertTrue(events.get(0) instanceof VertexManagerEvent);
+    VertexManagerEvent vme = (VertexManagerEvent) events.get(0);
+    verifyPartitionStats(vme, partitionsWithData);
+    assertTrue(events.get(1) instanceof CompositeDataMovementEvent);
+    CompositeDataMovementEvent cdme = (CompositeDataMovementEvent) events.get(1);
     assertEquals(0, cdme.getSourceIndexStart());
     assertEquals(numOutputs, cdme.getCount());
     DataMovementEventPayloadProto eventProto =
