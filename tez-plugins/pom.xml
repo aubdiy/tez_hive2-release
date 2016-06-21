@@ -68,7 +68,7 @@
     <profile>
       <id>hwx-common</id>
       <activation>
-        <activeByDefault>false</activeByDefault>
+        <activeByDefault>true</activeByDefault>
       </activation>
       <modules>
         <module>tez-yarn-timeline-history</module>
