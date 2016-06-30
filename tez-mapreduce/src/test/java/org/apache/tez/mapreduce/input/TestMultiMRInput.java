@@ -29,25 +29,31 @@ import static org.mockito.Mockito.verify;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.serializer.SerializationFactory;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.SequenceFileInputFormat;
+import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.tez.common.TezUtils;
+import org.apache.tez.common.counters.TaskCounter;
 import org.apache.tez.common.counters.TezCounters;
 import org.apache.tez.dag.api.UserPayload;
 import org.apache.tez.mapreduce.hadoop.MRInputHelpers;
@@ -96,13 +102,7 @@ public class TestMultiMRInput {
     jobConf.setInputFormat(org.apache.hadoop.mapred.SequenceFileInputFormat.class);
     FileInputFormat.setInputPaths(jobConf, workDir);
 
-    MRInputUserPayloadProto.Builder builder = MRInputUserPayloadProto.newBuilder();
-    builder.setGroupingEnabled(false);
-    builder.setConfigurationBytes(TezUtils.createByteStringFromConf(jobConf));
-    byte[] payload = builder.build().toByteArray();
-
-    InputContext inputContext = createTezInputContext(payload);
-
+    InputContext inputContext = createTezInputContext(jobConf);
 
     MultiMRInput mMrInput = new MultiMRInput(inputContext, 0);
 
@@ -129,20 +129,14 @@ public class TestMultiMRInput {
     jobConf.setInputFormat(org.apache.hadoop.mapred.SequenceFileInputFormat.class);
     FileInputFormat.setInputPaths(jobConf, workDir);
 
-    MRInputUserPayloadProto.Builder builder = MRInputUserPayloadProto.newBuilder();
-    builder.setGroupingEnabled(false);
-    builder.setConfigurationBytes(TezUtils.createByteStringFromConf(jobConf));
-    byte[] payload = builder.build().toByteArray();
-
-    InputContext inputContext = createTezInputContext(payload);
+    InputContext inputContext = createTezInputContext(jobConf);
 
     MultiMRInput input = new MultiMRInput(inputContext, 1);
     input.initialize();
-    List<Event> eventList = new ArrayList<Event>();
 
-    String file1 = "file1";
-    LinkedHashMap<LongWritable, Text> data1 = createInputData(localFs, workDir, jobConf, file1, 0,
-        10);
+    AtomicLong inputLength = new AtomicLong();
+    LinkedHashMap<LongWritable, Text> data = createSplits(1, workDir, jobConf, inputLength);
+
     SequenceFileInputFormat<LongWritable, Text> format =
         new SequenceFileInputFormat<LongWritable, Text>();
     InputSplit[] splits = format.getSplits(jobConf, 1);
@@ -153,31 +147,47 @@ public class TestMultiMRInput {
         InputDataInformationEvent.createWithSerializedPayload(0,
             splitProto.toByteString().asReadOnlyByteBuffer());
 
-    eventList.clear();
+    List<Event> eventList = new ArrayList<Event>();
     eventList.add(event);
     input.handleEvents(eventList);
 
-    int readerCount = 0;
-    int recordCount = 0;
-    for (KeyValueReader reader : input.getKeyValueReaders()) {
-      readerCount++;
-      while (reader.next()) {
-        verify(inputContext, times(++recordCount) ).notifyProgress();
-        if (data1.size() == 0) {
-          fail("Found more records than expected");
-        }
-        Object key = reader.getCurrentKey();
-        Object val = reader.getCurrentValue();
-        assertEquals(val, data1.remove(key));
-      }
-      try {
-        boolean hasNext = reader.next(); //should throw exception
-        fail();
-      } catch(IOException e) {
-        assertTrue(e.getMessage().contains("For usage, please refer to"));
-      }
-    }
-    assertEquals(1, readerCount);
+    assertReaders(input, data, 1, inputLength.get());
+  }
+
+  @Test
+  public void testNewFormatSplits() throws Exception {
+    Path workDir = new Path(TEST_ROOT_DIR, "testNewFormatSplits");
+    Job job = Job.getInstance(defaultConf);
+    job.setInputFormatClass(org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat.class);
+    org.apache.hadoop.mapreduce.lib.input.FileInputFormat.setInputPaths(job, workDir);
+    Configuration conf = job.getConfiguration();
+    conf.setBoolean("mapred.mapper.new-api", true);
+
+    // Create sequence file.
+    AtomicLong inputLength = new AtomicLong();
+    LinkedHashMap<LongWritable, Text> data = createSplits(1, workDir, conf, inputLength);
+
+    // Get split information.
+    org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat<LongWritable, Text> format =
+        new org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat<>();
+    List<org.apache.hadoop.mapreduce.InputSplit> splits = format.getSplits(job);
+    assertEquals(1, splits.size());
+
+    // Create the event.
+    MRSplitProto splitProto =
+        MRInputHelpers.createSplitProto(splits.get(0), new SerializationFactory(conf));
+    InputDataInformationEvent event = InputDataInformationEvent.createWithSerializedPayload(0,
+        splitProto.toByteString().asReadOnlyByteBuffer());
+
+    // Create input context.
+    InputContext inputContext = createTezInputContext(conf);
+
+    // Create the MR input object and process the event
+    MultiMRInput input = new MultiMRInput(inputContext, 1);
+    input.initialize();
+    input.handleEvents(Collections.<Event>singletonList(event));
+
+    assertReaders(input, data, 1, inputLength.get());
   }
 
   @Test(timeout = 5000)
@@ -188,29 +198,13 @@ public class TestMultiMRInput {
     jobConf.setInputFormat(org.apache.hadoop.mapred.SequenceFileInputFormat.class);
     FileInputFormat.setInputPaths(jobConf, workDir);
 
-    MRInputUserPayloadProto.Builder builder = MRInputUserPayloadProto.newBuilder();
-    builder.setGroupingEnabled(false);
-    builder.setConfigurationBytes(TezUtils.createByteStringFromConf(jobConf));
-    byte[] payload = builder.build().toByteArray();
-
-    InputContext inputContext = createTezInputContext(payload);
+    InputContext inputContext = createTezInputContext(jobConf);
 
     MultiMRInput input = new MultiMRInput(inputContext, 2);
     input.initialize();
-    List<Event> eventList = new ArrayList<Event>();
 
-    LinkedHashMap<LongWritable, Text> data = new LinkedHashMap<LongWritable, Text>();
-
-    String file1 = "file1";
-    LinkedHashMap<LongWritable, Text> data1 = createInputData(localFs, workDir, jobConf, file1, 0,
-        10);
-
-    String file2 = "file2";
-    LinkedHashMap<LongWritable, Text> data2 = createInputData(localFs, workDir, jobConf, file2, 10,
-        20);
-
-    data.putAll(data1);
-    data.putAll(data2);
+    AtomicLong inputLength = new AtomicLong();
+    LinkedHashMap<LongWritable, Text> data = createSplits(2, workDir, jobConf, inputLength);
 
     SequenceFileInputFormat<LongWritable, Text> format =
         new SequenceFileInputFormat<LongWritable, Text>();
@@ -227,15 +221,22 @@ public class TestMultiMRInput {
         InputDataInformationEvent.createWithSerializedPayload(0,
             splitProto2.toByteString().asReadOnlyByteBuffer());
 
-    eventList.clear();
+    List<Event> eventList = new ArrayList<Event>();
     eventList.add(event1);
     eventList.add(event2);
     input.handleEvents(eventList);
 
+    assertReaders(input, data, 2, inputLength.get());
+  }
+
+  private void assertReaders(MultiMRInput input, LinkedHashMap<LongWritable, Text> data,
+      int expectedReaderCounts, long inputBytes) throws Exception {
     int readerCount = 0;
+    int recordCount = 0;
     for (KeyValueReader reader : input.getKeyValueReaders()) {
       readerCount++;
       while (reader.next()) {
+        verify(input.getContext(), times(++recordCount + readerCount - 1)).notifyProgress();
         if (data.size() == 0) {
           fail("Found more records than expected");
         }
@@ -245,13 +246,16 @@ public class TestMultiMRInput {
       }
 
       try {
-        boolean hasNext = reader.next(); //should throw exception
+        reader.next(); //should throw exception
         fail();
       } catch(IOException e) {
         assertTrue(e.getMessage().contains("For usage, please refer to"));
       }
     }
-    assertEquals(2, readerCount);
+    long counterValue = input.getContext().getCounters()
+        .findCounter(TaskCounter.INPUT_SPLIT_LENGTH_BYTES).getValue();
+    assertEquals(inputBytes, counterValue);
+    assertEquals(expectedReaderCounts, readerCount);
   }
 
   @Test(timeout = 5000)
@@ -261,19 +265,13 @@ public class TestMultiMRInput {
     jobConf.setInputFormat(org.apache.hadoop.mapred.SequenceFileInputFormat.class);
     FileInputFormat.setInputPaths(jobConf, workDir);
 
-    MRInputUserPayloadProto.Builder builder = MRInputUserPayloadProto.newBuilder();
-    builder.setGroupingEnabled(false);
-    builder.setConfigurationBytes(TezUtils.createByteStringFromConf(jobConf));
-    byte[] payload = builder.build().toByteArray();
-
-    InputContext inputContext = createTezInputContext(payload);
+    InputContext inputContext = createTezInputContext(jobConf);
 
     MultiMRInput input = new MultiMRInput(inputContext, 1);
     input.initialize();
-    List<Event> eventList = new ArrayList<Event>();
 
-    String file1 = "file1";
-    createInputData(localFs, workDir, jobConf, file1, 0, 10);
+    createSplits(1, workDir, jobConf, new AtomicLong());
+
     SequenceFileInputFormat<LongWritable, Text> format =
         new SequenceFileInputFormat<LongWritable, Text>();
     InputSplit[] splits = format.getSplits(jobConf, 1);
@@ -287,7 +285,7 @@ public class TestMultiMRInput {
         InputDataInformationEvent.createWithSerializedPayload(1,
             splitProto.toByteString().asReadOnlyByteBuffer());
 
-    eventList.clear();
+    List<Event> eventList = new ArrayList<Event>();
     eventList.add(event1);
     eventList.add(event2);
     try {
@@ -299,7 +297,23 @@ public class TestMultiMRInput {
     }
   }
 
-  private InputContext createTezInputContext(byte[] payload) {
+  private LinkedHashMap<LongWritable, Text> createSplits(int splitCount, Path workDir,
+      Configuration conf, AtomicLong totalSize) throws Exception {
+    LinkedHashMap<LongWritable, Text> data = new LinkedHashMap<LongWritable, Text>();
+    for (int i = 0; i < splitCount; ++i) {
+      int start = i * 10;
+      int end = start + 10;
+      data.putAll(createInputData(localFs, workDir, conf, "file" + i, start, end, totalSize));
+    }
+    return data;
+  }
+
+  private InputContext createTezInputContext(Configuration conf) throws Exception {
+    MRInputUserPayloadProto.Builder builder = MRInputUserPayloadProto.newBuilder();
+    builder.setGroupingEnabled(false);
+    builder.setConfigurationBytes(TezUtils.createByteStringFromConf(conf));
+    byte[] payload = builder.build().toByteArray();
+
     ApplicationId applicationId = ApplicationId.newInstance(10000, 1);
     TezCounters counters = new TezCounters();
 
@@ -325,9 +339,8 @@ public class TestMultiMRInput {
   }
 
   public static LinkedHashMap<LongWritable, Text> createInputData(FileSystem fs, Path workDir,
-                                                                  JobConf job, String filename,
-                                                                  long startKey,
-                                                                  long numKeys) throws IOException {
+      Configuration job, String filename, long startKey, long numKeys, AtomicLong fileLength)
+          throws IOException {
     LinkedHashMap<LongWritable, Text> data = new LinkedHashMap<LongWritable, Text>();
     Path file = new Path(workDir, filename);
     LOG.info("Generating data at path: " + file);
@@ -346,6 +359,7 @@ public class TestMultiMRInput {
         writer.append(key, value);
         LOG.info("<k, v> : <" + key.get() + ", " + value + ">");
       }
+      fileLength.addAndGet(writer.getLength());
     } finally {
       writer.close();
     }
