@@ -8,12 +8,14 @@ INCOMPATIBLE CHANGES
 ALL CHANGES:
 
 
-Release 0.8.4: 2016-07-06
+Release 0.8.4: In progress.
 
 INCOMPATIBLE CHANGES
 
 ALL CHANGES:
 
+  TEZ-3323. Update licese and notice for xml-apis jar. Also update year in notice to 2016.
+  TEZ-3223. Support a NullHistoryLogger to disable history logging if needed.
   TEZ-3286. Allow clients to set processor reserved memory per vertex (instead of per container).
   TEZ-3293. Fetch failures can cause a shuffle hang waiting for memory merge that never starts.
   TEZ-3314. Double counting input bytes in MultiMRInput.
@@ -481,6 +483,7 @@ INCOMPATIBLE CHANGES
 
 ALL CHANGES:
 
+  TEZ-3223. Support a NullHistoryLogger to disable history logging if needed.
   TEZ-3293. Fetch failures can cause a shuffle hang waiting for memory merge that never starts.
   TEZ-3305. TestAnalyzer fails on Hadoop 2.7.
   TEZ-3304. TestHistoryParser fails with Hadoop 2.7.
