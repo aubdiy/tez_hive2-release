@@ -1,22 +1,6 @@
 Apache Tez Change Log
 =====================
 
-Release 0.8.5: Unreleased
-
-INCOMPATIBLE CHANGES
-
-ALL CHANGES:
-
-  TEZ-3358. Support using the same TimelineGroupId for multiple DAGs.
-  TEZ-3357. Change TimelineCachePlugin to handle DAG grouping.
-  TEZ-3348. NullPointerException in Tez MROutput while trying to write using Parquet's DeprecatedParquetOutputFormat.
-  TEZ-3356. Fix initializing of stats when custom ShuffleVertexManager is used.
-  TEZ-3329. Tez ATS data is incomplete for a vertex which fails or gets killed before initialization.
-  TEZ-3235. Modify Example TestOrderedWordCount job to test the IPC limit for large dag plans.
-  TEZ-3337. Do not log empty fields of TaskAttemptFinishedEvent to avoid confusion.
-  TEZ-1248. Reduce slow-start should special case 1 reducer runs.
-  TEZ-3370. Tez UI: Display the log link as N/A if the app does not provide a log link
-
 Release 0.8.4: 2016-07-08
 
 INCOMPATIBLE CHANGES
