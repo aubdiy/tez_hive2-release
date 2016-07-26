@@ -12,6 +12,9 @@ IMPROVEMENTS
 
 BUG FIXES
 
+  TEZ-3376. Fix groupId generation to account for dagId starting with 1.
+  TEZ-3359. Add granular log levels for HistoryLoggingService.
+  TEZ-3374. Change TEZ_HISTORY_LOGGING_TIMELINE_NUM_DAGS_PER_GROUP conf key name.
   TEZ-3358. Support using the same TimelineGroupId for multiple DAGs.
   TEZ-3357. Change TimelineCachePlugin to handle DAG grouping.
   TEZ-3348. NullPointerException in Tez MROutput while trying to write using
