@@ -3,7 +3,7 @@ Changes only in Hortonworks github and not in Apache Tez release 0.8.4 and hence
 INCOMPATIBLE CHANGES
 
 NEW FEATURES
-
+   TEZ-3230. (BUG-67298) Implement vertex manager and edge manager of cartesian product edge.
 
 
 IMPROVEMENTS
