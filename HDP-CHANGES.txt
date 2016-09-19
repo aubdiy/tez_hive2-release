@@ -9,6 +9,7 @@ NEW FEATURES
 
 IMPROVEMENTS
 
+  TEZ-3434. (BUG-69188) Add unit tests for flushing of recovery events.
   TEZ-3405. (BUG-63627) Support ability for AM to kill itself if there is no client heartbeating to it.
 
 
