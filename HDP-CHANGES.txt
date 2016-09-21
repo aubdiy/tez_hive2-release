@@ -18,6 +18,7 @@ IMPROVEMENTS
 
 BUG FIXES
 
+  TEZ-3000. (BUG-69238) Fix TestContainerReuse.
   TEZ-2852. (BUG-69238) TestVertexImpl fails due to race in AsyncDispatcher.
   TEZ-3582. (BUG-72610) Exception swallowed in PipelinedSorter causing incorrect results.
   TEZ-3579. (BUG-72619) Wrong configuration key for max slow start fraction in CartesianProductVertexManager.
