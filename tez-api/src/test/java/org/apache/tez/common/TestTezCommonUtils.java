@@ -314,4 +314,52 @@ public class TestTezCommonUtils {
 
   }
 
+  @Test (timeout = 5000)
+  public void testAMClientHeartBeatTimeout() {
+    TezConfiguration conf = new TezConfiguration(false);
+
+    // -1 for any negative value
+    Assert.assertEquals(-1,
+        TezCommonUtils.getAMClientHeartBeatTimeoutMillis(conf));
+    conf.setInt(TezConfiguration.TEZ_AM_CLIENT_HEARTBEAT_TIMEOUT_SECS, -2);
+    Assert.assertEquals(-1,
+        TezCommonUtils.getAMClientHeartBeatTimeoutMillis(conf));
+
+    // For any value > 0 but less than min, revert to min
+    conf.setInt(TezConfiguration.TEZ_AM_CLIENT_HEARTBEAT_TIMEOUT_SECS,
+        TezConstants.TEZ_AM_CLIENT_HEARTBEAT_TIMEOUT_SECS_MINIMUM - 1);
+    Assert.assertEquals(TezConstants.TEZ_AM_CLIENT_HEARTBEAT_TIMEOUT_SECS_MINIMUM * 1000,
+        TezCommonUtils.getAMClientHeartBeatTimeoutMillis(conf));
+
+    // For val > min, should remain val as configured
+    conf.setInt(TezConfiguration.TEZ_AM_CLIENT_HEARTBEAT_TIMEOUT_SECS,
+        TezConstants.TEZ_AM_CLIENT_HEARTBEAT_TIMEOUT_SECS_MINIMUM * 2);
+    Assert.assertEquals(TezConstants.TEZ_AM_CLIENT_HEARTBEAT_TIMEOUT_SECS_MINIMUM * 2000,
+        TezCommonUtils.getAMClientHeartBeatTimeoutMillis(conf));
+
+    conf = new TezConfiguration(false);
+    Assert.assertEquals(-1, TezCommonUtils.getAMClientHeartBeatPollIntervalMillis(conf, -1, 10));
+    Assert.assertEquals(-1, TezCommonUtils.getAMClientHeartBeatPollIntervalMillis(conf, -123, 10));
+    Assert.assertEquals(-1, TezCommonUtils.getAMClientHeartBeatPollIntervalMillis(conf, 0, 10));
+
+    // min poll interval is 1000
+    Assert.assertEquals(1000, TezCommonUtils.getAMClientHeartBeatPollIntervalMillis(conf, 600, 10));
+
+    // Poll interval is heartbeat interval/10
+    Assert.assertEquals(2000,
+        TezCommonUtils.getAMClientHeartBeatPollIntervalMillis(conf, 20000, 10));
+
+    // Configured poll interval ignored
+    conf.setInt(TezConfiguration.TEZ_AM_CLIENT_HEARTBEAT_POLL_INTERVAL_MILLIS, -1);
+    Assert.assertEquals(4000,
+        TezCommonUtils.getAMClientHeartBeatPollIntervalMillis(conf, 20000, 5));
+
+    // Positive poll interval is allowed
+    conf.setInt(TezConfiguration.TEZ_AM_CLIENT_HEARTBEAT_POLL_INTERVAL_MILLIS, 2000);
+    Assert.assertEquals(2000,
+        TezCommonUtils.getAMClientHeartBeatPollIntervalMillis(conf, 20000, 5));
+
+
+  }
+
 }

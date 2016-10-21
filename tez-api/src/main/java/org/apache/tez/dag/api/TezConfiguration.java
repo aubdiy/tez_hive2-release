@@ -602,7 +602,7 @@ public class TezConfiguration extends Configuration {
   @ConfigurationProperty(type="integer")
   public static final String TEZ_AM_CLIENT_THREAD_COUNT =
       TEZ_AM_PREFIX + "client.am.thread-count";
-  public static final int TEZ_AM_CLIENT_THREAD_COUNT_DEFAULT = 1;
+  public static final int TEZ_AM_CLIENT_THREAD_COUNT_DEFAULT = 2;
   
   /**
    * String value. Range of ports that the AM can use when binding for client connections. Leave blank
@@ -1647,4 +1647,29 @@ public class TezConfiguration extends Configuration {
   public static final String TEZ_AM_ATS_V15_OVERRIDE_SUMMARY_TYPES =
       TEZ_PREFIX + "am.ats.v15.override.summary-types";
   public static final boolean TEZ_AM_ATS_V15_OVERRIDE_SUMMARY_TYPES_DEFAULT = true;
+
+  /**
+   * Int value. Time interval (in seconds). If the Tez AM does not receive a heartbeat from the
+   * client within this time interval, it will kill any running DAG and shut down. Required to
+   * re-cycle orphaned Tez applications where the client is no longer alive. A negative value
+   * can be set to disable this check. For a positive value, the minimum value is 10 seconds.
+   * Values between 0 and 10 seconds will be reset to the minimum value.
+   * Only relevant in session mode.
+   * This is disabled by default i.e. by default, the Tez AM will go on to
+   * complete the DAG and only kill itself after hitting the DAG submission timeout defined by
+   * {@link #TEZ_SESSION_AM_DAG_SUBMIT_TIMEOUT_SECS}
+   */
+  @ConfigurationScope(Scope.AM)
+  @ConfigurationProperty(type="integer")
+  public static final String TEZ_AM_CLIENT_HEARTBEAT_TIMEOUT_SECS =
+      TEZ_PREFIX + "am.client.heartbeat.timeout.secs";
+  public static final int TEZ_AM_CLIENT_HEARTBEAT_TIMEOUT_SECS_DEFAULT = -1;
+
+
+  @Private
+  @ConfigurationScope(Scope.AM)
+  public static final String TEZ_AM_CLIENT_HEARTBEAT_POLL_INTERVAL_MILLIS =
+      TEZ_PREFIX + "am.client.heartbeat.poll.interval.millis";
+  public static final int TEZ_AM_CLIENT_HEARTBEAT_POLL_INTERVAL_MILLIS_DEFAULT = -1;
+
 }
