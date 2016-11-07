@@ -4,6 +4,7 @@ INCOMPATIBLE CHANGES
 
 NEW FEATURES
    TEZ-3230. (BUG-67298) Implement vertex manager and edge manager of cartesian product edge.
+   TEZ-3465. Support broadcast edge into cartesian product vertex and forbid other edges.
 
 
 IMPROVEMENTS
