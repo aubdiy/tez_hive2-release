@@ -13,6 +13,7 @@ IMPROVEMENTS
 
 BUG FIXES
 
+  TEZ-3533. (BUG-68733) ShuffleScheduler should shutdown threadpool on exit.
   TEZ-3536. (BUG-69492) NPE in WebUIService start when host resolution fails.
   TEZ-3493. (BUG-68606) DAG submit timeout cannot be set to a month.
   TEZ-3409. Log dagId along with other information when submitting a dag.
