@@ -37,6 +37,8 @@ public class TezYarnClient extends FrameworkClient {
 
   private final YarnClient yarnClient;
 
+  private volatile boolean isRunning;
+
   protected TezYarnClient(YarnClient yarnClient) {
     this.yarnClient = yarnClient;
   }
@@ -49,10 +51,12 @@ public class TezYarnClient extends FrameworkClient {
   @Override
   public void start() {
     yarnClient.start();
+    isRunning = true;
   }
 
   @Override
   public void stop() {
+    isRunning = false;
     yarnClient.stop();
   }
 
@@ -87,5 +91,10 @@ public class TezYarnClient extends FrameworkClient {
   @Override
   public ApplicationReport getApplicationReport(ApplicationId appId) throws YarnException, IOException {
     return yarnClient.getApplicationReport(appId);
+  }
+
+  @Override
+  public boolean isRunning() throws IOException {
+    return isRunning;
   }
 }

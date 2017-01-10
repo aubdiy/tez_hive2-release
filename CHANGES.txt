@@ -7,6 +7,7 @@ INCOMPATIBLE CHANGES
 
 ALL CHANGES:
 
+  TEZ-3551. FrameworkClient created twice causing minor delay.
   TEZ-3534. Differentiate thread names on Fetchers, minor changes to shuffle shutdown code.
   TEZ-3323. Update licese and notice for xml-apis jar. Also update year in notice to 2016.
   TEZ-3223. Support a NullHistoryLogger to disable history logging if needed.
