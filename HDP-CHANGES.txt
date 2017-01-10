@@ -15,6 +15,7 @@ IMPROVEMENTS
 
 BUG FIXES
 
+  TEZ-3566. (BUG-BUG-68946) Avoid caching fs isntances in TokenCache after a point.
   TEZ-3536. (BUG-69492) NPE in WebUIService start when host resolution fails.
   TEZ-3493. (BUG-67950) DAG submit timeout cannot be set to a month.
   TEZ-3533. ShuffleScheduler should shutdown threadpool on exit.
