@@ -46,7 +46,8 @@ public class TestCartesianProductEdgeManagerUnpartitioned {
   @Test(timeout = 5000)
   public void testTwoWay() throws Exception {
     CartesianProductEdgeManagerConfig emConfig =
-      new CartesianProductEdgeManagerConfig(false, new String[]{"v0","v1"}, null, new int[]{2,3}, null);
+      new CartesianProductEdgeManagerConfig(false, new String[]{"v0","v1"}, null,
+        new int[]{2,3}, new int[]{2,3}, null);
     testTwoWayV0(emConfig);
     testTwoWayV1(emConfig);
   }
@@ -68,11 +69,10 @@ public class TestCartesianProductEdgeManagerUnpartitioned {
     routingData = edgeManager.routeInputSourceTaskFailedEventToDestination(1, 1);
     assertNull(routingData);
 
-    routingData = edgeManager.routeCompositeDataMovementEventToDestination(1, 3);
+    routingData = edgeManager.routeInputSourceTaskFailedEventToDestination(1, 3);
     assertNotNull(routingData);
     assertEquals(1, routingData.getNumEvents());
     assertArrayEquals(new int[]{0}, routingData.getTargetIndices());
-    assertArrayEquals(new int[]{0}, routingData.getSourceIndices());
 
     assertEquals(0, edgeManager.routeInputErrorEventToSource(1, 0));
 
@@ -98,11 +98,10 @@ public class TestCartesianProductEdgeManagerUnpartitioned {
     routingData = edgeManager.routeInputSourceTaskFailedEventToDestination(1, 2);
     assertNull(routingData);
 
-    routingData = edgeManager.routeCompositeDataMovementEventToDestination(1, 1);
+    routingData = edgeManager.routeInputSourceTaskFailedEventToDestination(1, 1);
     assertNotNull(routingData);
     assertEquals(1, routingData.getNumEvents());
     assertArrayEquals(new int[]{0}, routingData.getTargetIndices());
-    assertArrayEquals(new int[]{0}, routingData.getSourceIndices());
 
     assertEquals(1, edgeManager.routeInputErrorEventToSource(1, 0));
 
@@ -119,7 +118,8 @@ public class TestCartesianProductEdgeManagerUnpartitioned {
   @Test(timeout = 5000)
   public void testThreeWay() throws Exception {
     CartesianProductEdgeManagerConfig emConfig =
-      new CartesianProductEdgeManagerConfig(false, new String[]{"v0","v1","v2"}, null, new int[]{2,3,4}, null);
+      new CartesianProductEdgeManagerConfig(false, new String[]{"v0","v1","v2"}, null,
+        new int[]{2,3,4}, new int[]{2,3,4}, null);
     testThreeWayV0(emConfig);
     testThreeWayV1(emConfig);
     testThreeWayV2(emConfig);
@@ -142,11 +142,10 @@ public class TestCartesianProductEdgeManagerUnpartitioned {
     routingData = edgeManager.routeInputSourceTaskFailedEventToDestination(1, 1);
     assertNull(routingData);
 
-    routingData = edgeManager.routeCompositeDataMovementEventToDestination(1, 12);
+    routingData = edgeManager.routeInputSourceTaskFailedEventToDestination(1, 12);
     assertNotNull(routingData);
     assertEquals(1, routingData.getNumEvents());
     assertArrayEquals(new int[]{0}, routingData.getTargetIndices());
-    assertArrayEquals(new int[]{0}, routingData.getSourceIndices());
 
     assertEquals(0, edgeManager.routeInputErrorEventToSource(1, 0));
 
@@ -172,11 +171,10 @@ public class TestCartesianProductEdgeManagerUnpartitioned {
     routingData = edgeManager.routeInputSourceTaskFailedEventToDestination(1, 1);
     assertNull(routingData);
 
-    routingData = edgeManager.routeCompositeDataMovementEventToDestination(1, 16);
+    routingData = edgeManager.routeInputSourceTaskFailedEventToDestination(1, 16);
     assertNotNull(routingData);
     assertEquals(1, routingData.getNumEvents());
     assertArrayEquals(new int[]{0}, routingData.getTargetIndices());
-    assertArrayEquals(new int[]{0}, routingData.getSourceIndices());
 
     assertEquals(0, edgeManager.routeInputErrorEventToSource(1, 0));
 
@@ -202,11 +200,10 @@ public class TestCartesianProductEdgeManagerUnpartitioned {
     routingData = edgeManager.routeInputSourceTaskFailedEventToDestination(1, 0);
     assertNull(routingData);
 
-    routingData = edgeManager.routeCompositeDataMovementEventToDestination(1, 13);
+    routingData = edgeManager.routeInputSourceTaskFailedEventToDestination(1, 13);
     assertNotNull(routingData);
     assertEquals(1, routingData.getNumEvents());
     assertArrayEquals(new int[]{0}, routingData.getTargetIndices());
-    assertArrayEquals(new int[]{0}, routingData.getSourceIndices());
 
     assertEquals(1, edgeManager.routeInputErrorEventToSource(1, 0));
 
@@ -218,7 +215,8 @@ public class TestCartesianProductEdgeManagerUnpartitioned {
   @Test(timeout = 5000)
   public void testZeroSrcTask() {
     CartesianProductEdgeManagerConfig emConfig =
-      new CartesianProductEdgeManagerConfig(false, new String[]{"v0", "v1"}, null, new int[]{2, 0}, null);
+      new CartesianProductEdgeManagerConfig(false, new String[]{"v0", "v1"}, null,
+        new int[]{2,0}, new int[]{2,0}, null);
     testZeroSrcTaskV0(emConfig);
     testZeroSrcTaskV1(emConfig);
   }
@@ -236,5 +234,70 @@ public class TestCartesianProductEdgeManagerUnpartitioned {
     when(mockContext.getSourceVertexName()).thenReturn("v1");
     when(mockContext.getSourceVertexNumTasks()).thenReturn(0);
     edgeManager.initialize(config);
+  }
+
+  /**
+   * Vertex v0 has 20 tasks 10 groups
+   * Vertex v1 has 10 tasks 1 group
+   */
+  @Test(timeout = 5000)
+  public void testTwoWayAutoGrouping() throws Exception {
+    CartesianProductEdgeManagerConfig emConfig =
+      new CartesianProductEdgeManagerConfig(false, new String[]{"v0","v1"}, null,
+        new int[]{20, 10}, new int[]{10,1}, null);
+    testTwoWayAutoGroupingV0(emConfig);
+    testTwoWayAutoGroupingV1(emConfig);
+  }
+
+  private void testTwoWayAutoGroupingV0(CartesianProductEdgeManagerConfig config) throws Exception {
+    when(mockContext.getSourceVertexName()).thenReturn("v0");
+    when(mockContext.getSourceVertexNumTasks()).thenReturn(20);
+    edgeManager.initialize(config);
+
+    EventRouteMetadata routingData = edgeManager.routeCompositeDataMovementEventToDestination(1, 1);
+    assertNull(routingData);
+
+    routingData = edgeManager.routeCompositeDataMovementEventToDestination(1, 0);
+    assertNotNull(routingData);
+    assertEquals(1, routingData.getNumEvents());
+    assertArrayEquals(new int[]{1}, routingData.getTargetIndices());
+    assertArrayEquals(new int[]{0}, routingData.getSourceIndices());
+
+    routingData = edgeManager.routeInputSourceTaskFailedEventToDestination(2, 2);
+    assertNull(routingData);
+
+    routingData = edgeManager.routeInputSourceTaskFailedEventToDestination(2, 1);
+    assertNotNull(routingData);
+    assertEquals(1, routingData.getNumEvents());
+    assertArrayEquals(new int[]{0}, routingData.getTargetIndices());
+
+    assertEquals(7, edgeManager.routeInputErrorEventToSource(3, 1));
+
+    assertEquals(2, edgeManager.getNumDestinationTaskPhysicalInputs(4));
+    assertEquals(1, edgeManager.getNumSourceTaskPhysicalOutputs(5));
+    assertEquals(1, edgeManager.getNumDestinationConsumerTasks(6));
+  }
+
+  private void testTwoWayAutoGroupingV1(CartesianProductEdgeManagerConfig config) throws Exception {
+    when(mockContext.getSourceVertexName()).thenReturn("v1");
+    when(mockContext.getSourceVertexNumTasks()).thenReturn(10);
+    edgeManager.initialize(config);
+
+    EventRouteMetadata routingData = edgeManager.routeCompositeDataMovementEventToDestination(1, 1);
+    assertNotNull(routingData);
+    assertEquals(1, routingData.getNumEvents());
+    assertArrayEquals(new int[]{1}, routingData.getTargetIndices());
+    assertArrayEquals(new int[]{0}, routingData.getSourceIndices());
+
+    routingData = edgeManager.routeInputSourceTaskFailedEventToDestination(2, 3);
+    assertNotNull(routingData);
+    assertEquals(1, routingData.getNumEvents());
+    assertArrayEquals(new int[]{2}, routingData.getTargetIndices());
+
+    assertEquals(5, edgeManager.routeInputErrorEventToSource(4, 5));
+
+    assertEquals(10, edgeManager.getNumDestinationTaskPhysicalInputs(6));
+    assertEquals(1, edgeManager.getNumSourceTaskPhysicalOutputs(7));
+    assertEquals(10, edgeManager.getNumDestinationConsumerTasks(8));
   }
 }
