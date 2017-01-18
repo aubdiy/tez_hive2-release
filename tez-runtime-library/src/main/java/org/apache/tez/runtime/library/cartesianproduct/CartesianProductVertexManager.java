@@ -51,7 +51,7 @@ public class CartesianProductVertexManager extends VertexManagerPlugin {
     "tez.cartesian-product.min-src-fraction";
   public static final float TEZ_CARTESIAN_PRODUCT_SLOW_START_MIN_FRACTION_DEFAULT = 0.25f;
   public static final String TEZ_CARTESIAN_PRODUCT_SLOW_START_MAX_FRACTION =
-    "tez.cartesian-product.min-src-fraction";
+    "tez.cartesian-product.max-src-fraction";
   public static final float TEZ_CARTESIAN_PRODUCT_SLOW_START_MAX_FRACTION_DEFAULT = 0.75f;
 
   private CartesianProductVertexManagerReal vertexManagerReal = null;
