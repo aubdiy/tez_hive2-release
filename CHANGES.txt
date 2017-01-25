@@ -7,6 +7,7 @@ INCOMPATIBLE CHANGES
 
 ALL CHANGES:
 
+  TEZ-3494. Support relative url for tez-ui.history-url.base config
   TEZ-3575. RM have started forwarding origin. Use that in AMWebController for CORS support
   TEZ-3582. Exception swallowed in PipelinedSorter causing incorrect results.
   TEZ-3566. Avoid caching fs isntances in TokenCache after a point.
