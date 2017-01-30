@@ -17,6 +17,7 @@ IMPROVEMENTS
 
 BUG FIXES
 
+  TEZ-3582. (BUG-72610) Exception swallowed in PipelinedSorter causing incorrect results.
   TEZ-3579. (BUG-72619) Wrong configuration key for max slow start fraction in CartesianProductVertexManager.
   TEZ-3574. (BUG-72510) Container reuse won't pickup extra dag level local resource.
   TEZ-3568. (BUG-69826) Update SecurityUtils configuration to pick user provided configuration.
