@@ -10,6 +10,7 @@ NEW FEATURES
 
 IMPROVEMENTS
 
+  TEZ-3601. (BUG-73672) Add another HistoryLogLevel to suppress TaskAttempts at specific levels.
   TEZ-3404. (BUG-68838) Move blocking call for YARN Timeline domain creation from client side to AM.
   TEZ-3434. (BUG-69188) Add unit tests for flushing of recovery events.
   TEZ-3405. (BUG-63627) Support ability for AM to kill itself if there is no client heartbeating to it.
