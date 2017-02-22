@@ -462,7 +462,7 @@ public class TestHistoryEventTimelineConversion {
 
     Assert.assertEquals(submitTime, timelineEntity.getStartTime().longValue());
 
-    Assert.assertEquals(4, timelineEntity.getPrimaryFilters().size());
+    Assert.assertEquals(5, timelineEntity.getPrimaryFilters().size());
 
     Assert.assertTrue(
         timelineEntity.getPrimaryFilters().get(ATSConstants.DAG_NAME).contains(
@@ -475,6 +475,9 @@ public class TestHistoryEventTimelineConversion {
             applicationAttemptId.getApplicationId().toString()));
     Assert.assertTrue(
         timelineEntity.getPrimaryFilters().get(ATSConstants.USER).contains(user));
+    Assert.assertTrue(
+        timelineEntity.getPrimaryFilters().get(ATSConstants.DAG_QUEUE_NAME)
+            .contains(queueName));
 
     Assert.assertEquals(9, timelineEntity.getOtherInfo().size());
     Assert.assertTrue(timelineEntity.getOtherInfo().containsKey(ATSConstants.DAG_PLAN));
@@ -498,7 +501,7 @@ public class TestHistoryEventTimelineConversion {
         timelineEntity.getOtherInfo().get(ATSConstants.CALLER_CONTEXT_TYPE),
             dagPlan.getCallerContext().getCallerType());
     Assert.assertEquals(
-        queueName, timelineEntity.getOtherInfo().get(ATSConstants.DAG_SUBMITTED_QUEUE_NAME));
+        queueName, timelineEntity.getOtherInfo().get(ATSConstants.DAG_QUEUE_NAME));
 
   }
 

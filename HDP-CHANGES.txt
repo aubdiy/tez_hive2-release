@@ -10,6 +10,7 @@ NEW FEATURES
 
 IMPROVEMENTS
 
+  TEZ-3627. (BUG-56692) Use queue name available in RegisterApplicationMasterResponse for publishing to ATS.
   TEZ-3267. (BUG-56692) Publish queue name to ATS as part of dag summary.
   TEZ-3581. (BUG-69744) Add different logger to enable suppressing logs for specific lines.
   TEZ-3601. (BUG-73672) Add another HistoryLogLevel to suppress TaskAttempts at specific levels.
