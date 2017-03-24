@@ -1,5 +1,7 @@
 Changes only in Hortonworks github and not in Apache Tez release 0.8.4 and hence not covered by CHANGES.txt.
 
+
+
 INCOMPATIBLE CHANGES
 
 NEW FEATURES
@@ -10,6 +12,7 @@ NEW FEATURES
 
 IMPROVEMENTS
 
+  TEZ-3494. (BUG-73376) Support relative url for tez-ui.history-url.base config (hitesh via sree)
   TEZ-3647. (BUG-75204) Add a setting which lets Tez determine Xmx.
   TEZ-3634. (BUG-74988) reduce the buffer sizes in PipelinedSorter by a small amount.
   TEZ-3627. (BUG-56692) Use queue name available in RegisterApplicationMasterResponse for publishing to ATS.
@@ -23,6 +26,15 @@ IMPROVEMENTS
 
 BUG FIXES
 
+  TEZ-3644. (BUG-76200) Cleanup container list stored in AMNode. (sseth)
+  TEZ-3643. (BUG-76200) Long running AMs can go out of memory due to retained AMContainer instances. (sseth)
+  TEZ-3637. (BUG-72438) TezMerger logs too much at INFO level. (sseth)
+  TEZ-3624. (BUG-70899) Split multiple calls on the same line in TaskCommunicatorContextImpl. (sseth)
+  TEZ-3575. (BUG-72167) RM have started forwarding origin. Use that in AMWebController for CORS support (sree)
+  TEZ-3458. (BUG-67470) Disable auto-grouping by default.
+  TEZ-3584. (BUG-72164) AMKeepAliveService not shutdown correctly when HS2 runs into an AM which fails.
+  TEZ-3558. (BUG-70596) CartesianProduct is missing from the ExampleDriver class
+  TEZ-3534. Differentiate thread names on Fetchers, minor changes to shuffle shutdown code.
   TEZ-3609. (BUG-73674) Improve ATSv15 performance for DAG entities read calls.
   TEZ-3000. (BUG-69238) Fix TestContainerReuse.
   TEZ-2852. (BUG-69238) TestVertexImpl fails due to race in AsyncDispatcher.
