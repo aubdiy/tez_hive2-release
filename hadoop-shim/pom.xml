@@ -20,7 +20,7 @@
   <parent>
      <artifactId>tez</artifactId>
      <groupId>org.apache.tez</groupId>
-     <version>0.8.4.2.6.0.2-SNAPSHOT</version>
+     <version>0.8.4.2.6.0.3-8</version>
   </parent>
   <artifactId>hadoop-shim</artifactId>
 
