@@ -17,7 +17,6 @@
 
 package org.apache.tez.common;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -47,6 +46,7 @@ import org.apache.hadoop.security.SecurityUtil;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.log4j.Appender;
+import org.apache.tez.common.io.NonSyncByteArrayOutputStream;
 import org.apache.tez.dag.api.DagTypeConverters;
 import org.apache.tez.dag.records.TezDAGID;
 import org.apache.tez.dag.records.TezTaskAttemptID;
@@ -146,7 +146,7 @@ public class TezUtilsInternal {
   private static byte[] compressBytesInflateDeflate(byte[] inBytes) {
     Deflater deflater = new Deflater(Deflater.BEST_SPEED);
     deflater.setInput(inBytes);
-    ByteArrayOutputStream bos = new ByteArrayOutputStream(inBytes.length);
+    NonSyncByteArrayOutputStream bos = new NonSyncByteArrayOutputStream(inBytes.length);
     deflater.finish();
     byte[] buffer = new byte[1024 * 8];
     while (!deflater.finished()) {
@@ -160,7 +160,7 @@ public class TezUtilsInternal {
   private static byte[] uncompressBytesInflateDeflate(byte[] inBytes) throws IOException {
     Inflater inflater = new Inflater();
     inflater.setInput(inBytes);
-    ByteArrayOutputStream bos = new ByteArrayOutputStream(inBytes.length);
+    NonSyncByteArrayOutputStream bos = new NonSyncByteArrayOutputStream(inBytes.length);
     byte[] buffer = new byte[1024 * 8];
     while (!inflater.finished()) {
       int count;

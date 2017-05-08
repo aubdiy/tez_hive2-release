@@ -29,6 +29,7 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 
 import org.apache.tez.common.TezCommonUtils;
+import org.apache.tez.common.io.NonSyncByteArrayInputStream;
 import org.apache.tez.runtime.library.utils.DATA_RANGE_IN_MB;
 import org.roaringbitmap.RoaringBitmap;
 import org.slf4j.Logger;
@@ -62,7 +63,6 @@ import org.apache.tez.runtime.library.shuffle.impl.ShuffleUserPayloads.VertexMan
 
 import javax.annotation.Nullable;
 
-import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -614,7 +614,7 @@ public class ShuffleVertexManager extends VertexManagerPlugin {
           RoaringBitmap partitionStats = new RoaringBitmap();
           ByteString compressedPartitionStats = proto.getPartitionStats();
           byte[] rawData = TezCommonUtils.decompressByteStringToByteArray(compressedPartitionStats);
-          ByteArrayInputStream bin = new ByteArrayInputStream(rawData);
+          NonSyncByteArrayInputStream bin = new NonSyncByteArrayInputStream(rawData);
           partitionStats.deserialize(new DataInputStream(bin));
 
           parsePartitionStats(partitionStats);
