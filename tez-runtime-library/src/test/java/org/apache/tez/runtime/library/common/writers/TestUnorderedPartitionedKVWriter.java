@@ -46,6 +46,9 @@ import java.util.UUID;
 
 import com.google.protobuf.ByteString;
 import org.apache.tez.runtime.api.TaskFailureType;
+import org.apache.tez.runtime.api.events.VertexManagerEvent;
+import org.apache.tez.runtime.library.shuffle.impl.ShuffleUserPayloads;
+import org.apache.tez.runtime.library.shuffle.impl.ShuffleUserPayloads.VertexManagerEventPayloadProto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.hadoop.conf.Configurable;
@@ -327,6 +330,20 @@ public class TestUnorderedPartitionedKVWriter {
 
     List<Event> events = kvWriter.close();
     verify(outputContext, never()).reportFailure(any(TaskFailureType.class), any(Throwable.class), any(String.class));
+
+    if (!pipeliningEnabled) {
+      VertexManagerEvent vmEvent = null;
+      for (Event event : events) {
+        if (event instanceof VertexManagerEvent) {
+          assertNull(vmEvent);
+          vmEvent = (VertexManagerEvent) event;
+        }
+      }
+      VertexManagerEventPayloadProto vmEventPayload =
+        VertexManagerEventPayloadProto.parseFrom(
+          ByteString.copyFrom(vmEvent.getUserPayload().asReadOnlyBuffer()));
+      assertEquals(numRecordsWritten, vmEventPayload.getNumRecord());
+    }
 
     TezCounter outputLargeRecordsCounter = counters.findCounter(TaskCounter.OUTPUT_LARGE_RECORDS);
     assertEquals(numLargeKeys + numLargevalues + numLargeKvPairs,

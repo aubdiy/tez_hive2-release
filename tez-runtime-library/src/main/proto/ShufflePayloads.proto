@@ -44,6 +44,7 @@ message InputInformationEventPayloadProto {
 message VertexManagerEventPayloadProto {
   optional int64 output_size = 1;
   optional bytes partition_stats = 2;
+  optional int64 num_record = 3;
 }
 
 message ShuffleEdgeManagerConfigPayloadProto {

@@ -425,6 +425,8 @@ public class ShuffleUtils {
           ShuffleUserPayloads.VertexManagerEventPayloadProto.newBuilder();
 
       long outputSize = context.getCounters().findCounter(TaskCounter.OUTPUT_BYTES).getValue();
+      vmBuilder.setNumRecord(context.getCounters().findCounter(TaskCounter.OUTPUT_RECORDS).getValue()
+        + context.getCounters().findCounter(TaskCounter.OUTPUT_LARGE_RECORDS).getValue());
 
       //Set this information only when required.  In pipelined shuffle, multiple events would end
       // up adding up to final outputsize.  This is needed for auto-reduce parallelism to work
