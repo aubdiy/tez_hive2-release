@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.tez.dag.api.TezConfiguration;
+import org.apache.tez.runtime.api.impl.GroupInputSpec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.hadoop.yarn.event.EventHandler;
@@ -99,6 +100,17 @@ public class Edge {
       return destinationVertex.getTotalTasks();
     }
 
+    @Override
+    public String getVertexGroupName() {
+      if (destinationVertex.getGroupInputSpecList() != null) {
+        for (GroupInputSpec group : destinationVertex.getGroupInputSpecList()) {
+          if (group.getGroupVertices().contains(getSourceVertexName())) {
+            return group.getGroupName();
+          }
+        }
+      }
+      return null;
+    }
   }
 
   private EdgeProperty edgeProperty;

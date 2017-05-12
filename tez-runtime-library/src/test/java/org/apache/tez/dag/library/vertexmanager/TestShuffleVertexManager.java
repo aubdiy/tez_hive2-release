@@ -219,6 +219,11 @@ public class TestShuffleVertexManager {
               public int getDestinationVertexNumTasks() {
                 return numTasks;
               }
+
+              @Override
+              public String getVertexGroupName() {
+                return null;
+              }
             };
             EdgeManagerPlugin edgeManager = ReflectionUtils
                 .createClazzInstance(pluginDesc.getClassName(),
