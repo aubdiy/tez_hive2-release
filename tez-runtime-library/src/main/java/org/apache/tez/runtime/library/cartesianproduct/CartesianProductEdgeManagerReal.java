@@ -19,7 +19,6 @@ package org.apache.tez.runtime.library.cartesianproduct;
 
 import org.apache.tez.dag.api.EdgeManagerPluginContext;
 import org.apache.tez.dag.api.EdgeManagerPluginOnDemand.EventRouteMetadata;
-import org.apache.tez.runtime.library.cartesianproduct.CartesianProductUserPayload.CartesianProductConfigProto;
 
 /**
  * base class of cartesian product edge manager implementation
@@ -35,7 +34,7 @@ abstract class CartesianProductEdgeManagerReal {
     return this.context;
   }
 
-  public abstract void initialize(CartesianProductConfigProto config) throws Exception;
+  public abstract void initialize(CartesianProductEdgeManagerConfig config) throws Exception;
 
   public void prepareForRouting() throws Exception {}
 

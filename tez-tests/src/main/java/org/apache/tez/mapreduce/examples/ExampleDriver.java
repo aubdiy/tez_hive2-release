@@ -81,8 +81,6 @@ public class ExampleDriver {
           "Filters lines by the specified word using OneToOne edge");
       pgd.addClass("multiplecommitsExample", MultipleCommitsExample.class,
           "Job with multiple commits in both vertex group and vertex");
-      pgd.addClass("cartesianproduct", CartesianProduct.class,
-        "Cartesian Product Example");
       exitCode = pgd.run(argv);
     }
     catch(Throwable e){

@@ -30,7 +30,7 @@ import static org.junit.Assert.assertTrue;
 public class TestCartesianProductCombination {
   private void verifyCombination(CartesianProductCombination combination, int[] result, int taskId) {
     assertArrayEquals(result, Ints.toArray(combination.getCombination()));
-    assertEquals(taskId, combination.getTaskId());
+    assertEquals(taskId, combination.getChunkId());
   }
 
   private void testCombinationTwoWayVertex0() {

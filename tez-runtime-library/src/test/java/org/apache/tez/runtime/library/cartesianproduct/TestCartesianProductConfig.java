@@ -36,6 +36,7 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class TestCartesianProductConfig {
   private TezConfiguration conf;
@@ -46,7 +47,7 @@ public class TestCartesianProductConfig {
   }
 
   @Test(timeout = 5000)
-  public void testSerializationFair() throws IOException {
+  public void testSerializationPartitioned() throws IOException {
     Map<String, Integer> vertexPartitionMap = new HashMap<>();
     vertexPartitionMap.put("v1", 2);
     vertexPartitionMap.put("v2", 3);
@@ -76,7 +77,7 @@ public class TestCartesianProductConfig {
     CartesianProductConfig parsedConfig = CartesianProductConfig.fromUserPayload(payload);
     assertConfigEquals(config, parsedConfig);
 
-    // fair cartesian product config should have null in numPartitions fields
+    // unpartitioned config should have null in numPartitions fields
     try {
       config = new CartesianProductConfig(false, new int[]{}, new String[]{"v0","v1"},null);
       config.checkNumPartitions();
@@ -112,34 +113,24 @@ public class TestCartesianProductConfig {
   }
 
   @Test(timeout = 5000)
-  public void testFairCartesianProductConfig() {
+  public void testAutoGroupingConfig() {
     List<String> sourceVertices = new ArrayList<>();
     sourceVertices.add("v0");
     sourceVertices.add("v1");
     CartesianProductConfig config = new CartesianProductConfig(sourceVertices);
 
-    // conf not set
+    // auto grouping conf not set
     CartesianProductConfigProto proto = config.toProto(conf);
-    assertEquals(CartesianProductVertexManager.TEZ_CARTESIAN_PRODUCT_MAX_PARALLELISM_DEFAULT,
-      proto.getMaxParallelism());
-    assertEquals(CartesianProductVertexManager.TEZ_CARTESIAN_PRODUCT_MIN_OPS_PER_WORKER_DEFAULT,
-      proto.getMinOpsPerWorker());
-    assertEquals(CartesianProductVertexManager.TEZ_CARTESIAN_PRODUCT_ENABLE_GROUPING_DEFAULT,
-      proto.getEnableGrouping());
-    assertFalse(proto.hasNumPartitionsForFairCase());
-    assertFalse(proto.hasGroupingFraction());
+    assertFalse(proto.hasEnableAutoGrouping());
+    assertFalse(proto.hasDesiredBytesPerChunk());
 
-    // conf set
-    conf.setInt(CartesianProductVertexManager.TEZ_CARTESIAN_PRODUCT_MAX_PARALLELISM, 1000);
-    conf.setLong(CartesianProductVertexManager.TEZ_CARTESIAN_PRODUCT_MIN_OPS_PER_WORKER, 1000000);
-    conf.setBoolean(CartesianProductVertexManager.TEZ_CARTESIAN_PRODUCT_ENABLE_GROUPING, false);
-    conf.setFloat(CartesianProductVertexManager.TEZ_CARTESIAN_PRODUCT_GROUPING_FRACTION, 0.75f);
-    conf.setInt(CartesianProductVertexManager.TEZ_CARTESIAN_PRODUCT_NUM_PARTITIONS, 25);
+    // auto groupinig conf not set
+    conf.setBoolean(CartesianProductVertexManager.TEZ_CARTESIAN_PRODUCT_ENABLE_AUTO_GROUPING, true);
+    conf.setLong(CartesianProductVertexManager.TEZ_CARTESIAN_PRODUCT_DESIRED_BYTES_PER_GROUP, 1000);
     proto = config.toProto(conf);
-    assertEquals(1000, proto.getMaxParallelism());
-    assertEquals(1000000, proto.getMinOpsPerWorker());
-    assertFalse(proto.getEnableGrouping());
-    assertEquals(0.75f, proto.getGroupingFraction(), 0.01);
-    assertEquals(25, proto.getNumPartitionsForFairCase());
+    assertTrue(proto.hasEnableAutoGrouping());
+    assertTrue(proto.hasDesiredBytesPerChunk());
+    assertEquals(true, proto.getEnableAutoGrouping());
+    assertEquals(1000, proto.getDesiredBytesPerChunk());
   }
 }

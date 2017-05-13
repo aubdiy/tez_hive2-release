@@ -21,44 +21,34 @@ import com.google.common.primitives.Ints;
 import org.apache.tez.common.ReflectionUtils;
 import org.apache.tez.dag.api.EdgeManagerPluginContext;
 import org.apache.tez.dag.api.EdgeManagerPluginOnDemand.EventRouteMetadata;
-import org.apache.tez.dag.api.TezReflectionException;
 import org.apache.tez.dag.api.UserPayload;
 
 import javax.annotation.Nullable;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.apache.tez.runtime.library.cartesianproduct.CartesianProductUserPayload.*;
-
 class CartesianProductEdgeManagerPartitioned extends CartesianProductEdgeManagerReal {
   private int positionId;
   private CartesianProductFilter filter;
   private int[] taskIdMapping;
+  private CartesianProductEdgeManagerConfig config;
   private int[] numPartitions;
-  private List<String> sources;
 
   public CartesianProductEdgeManagerPartitioned(EdgeManagerPluginContext context) {
     super(context);
   }
 
   @Override
-  public void initialize(CartesianProductConfigProto config) throws Exception {
-    this.numPartitions = Ints.toArray(config.getNumPartitionsList());
-    this.sources = config.getSourcesList();
-    this.positionId = sources.indexOf(getContext().getSourceVertexName());
-
-    if (config.hasFilterClassName()) {
-      UserPayload userPayload = config.hasFilterUserPayload()
-        ? UserPayload.create(ByteBuffer.wrap(config.getFilterUserPayload().toByteArray())) : null;
-      try {
-        filter = ReflectionUtils.createClazzInstance(config.getFilterClassName(),
-          new Class[]{UserPayload.class}, new UserPayload[]{userPayload});
-      } catch (TezReflectionException e) {
-        throw e;
-      }
+  public void initialize(CartesianProductEdgeManagerConfig config) throws Exception {
+    this.config = config;
+    this.numPartitions = Ints.toArray(config.getNumPartitions());
+    positionId = config.getSourceVertices().indexOf(getContext().getSourceVertexName());
+    CartesianProductFilterDescriptor filterDescriptor = config.getFilterDescriptor();
+    if (filterDescriptor != null) {
+      filter = ReflectionUtils.createClazzInstance(filterDescriptor.getClassName(),
+        new Class[] {UserPayload.class}, new UserPayload[] {filterDescriptor.getUserPayload()});
     }
     generateTaskIdMapping();
   }
@@ -116,12 +106,13 @@ class CartesianProductEdgeManagerPartitioned extends CartesianProductEdgeManager
     CartesianProductCombination combination =
       new CartesianProductCombination(numPartitions);
     combination.firstTask();
+    List<String> sources = config.getSourceVertices();
     do {
       for (int i = 0; i < sources.size(); i++) {
         vertexPartitionMap.put(sources.get(i), combination.getCombination().get(i));
       }
       if (filter == null || filter.isValidCombination(vertexPartitionMap)) {
-        idealTaskId.add(combination.getTaskId());
+        idealTaskId.add(combination.getChunkId());
       }
     } while (combination.nextTask());
     this.taskIdMapping = Ints.toArray(idealTaskId);

@@ -20,70 +20,70 @@ package org.apache.tez.runtime.library.utils;
 import com.google.common.base.Preconditions;
 
 /**
- * This grouper group specified number of items into specified number of groups.
+ * This grouper group specified number of tasks into specified number of groups.
  *
- * If numItem%numGroup is zero, every group has numItem/numGroup items.
- * Otherwise, every group will get numItem/numGroup items first, and remaining items will be
- * distributed in last numItem-numItem%numGroup*numGroup groups (one item for each group).
- * For example, if we group 8 items into 3 groups, each group get {2, 3, 3} items.
+ * If numTask%numGroup is zero, every group has numTask/numGroup tasks.
+ * Otherwise, every group will get numTask/numGroup tasks first, and remaining tasks will be
+ * distributed in last numTask-numTask%numGroup*numGroup groups (one task for each group).
+ * For example, if we group 8 tasks into 3 groups, each group get {2, 3, 3} tasks.
  */
 public class Grouper {
   private int numGroup;
-  private int numItem;
+  private int numTask;
   private int numGroup1;
-  private int itemPerGroup1;
+  private int taskPerGroup1;
   private int numGroup2;
-  private int itemPerGroup2;
+  private int taskPerGroup2;
 
-  public Grouper init(int numItem, int numGroup) {
+  public Grouper init(int numTask, int numGroup) {
     Preconditions.checkArgument(numGroup > 0,
       "Number of groups is " + numGroup + ". Should be positive");
-    Preconditions.checkArgument(numItem > 0,
-      "Number of items is " + numItem + ". Should be positive");
-    Preconditions.checkArgument(numItem >= numGroup,
-      "Num of groups + " + numGroup + " shouldn't be more than number of items " + numItem);
-    this.numItem = numItem;
+    Preconditions.checkArgument(numTask > 0,
+      "Number of tasks is " + numTask + ". Should be positive");
+    Preconditions.checkArgument(numTask >= numGroup,
+      "Num of groups + " + numGroup + " shouldn't be more than number of tasks " + numTask);
+    this.numTask = numTask;
     this.numGroup = numGroup;
-    this.itemPerGroup1 = numItem / numGroup;
-    this.itemPerGroup2 = itemPerGroup1 + 1;
-    this.numGroup2 = numItem % numGroup;
+    this.taskPerGroup1 = numTask / numGroup;
+    this.taskPerGroup2 = taskPerGroup1 + 1;
+    this.numGroup2 = numTask % numGroup;
     this.numGroup1 = numGroup - numGroup2;
 
     return this;
   }
 
-  public int getFirstItemInGroup(int groupId) {
+  public int getFirstTaskInGroup(int groupId) {
     Preconditions.checkArgument(0 <= groupId && groupId < numGroup, "Invalid groupId " + groupId);
     if (groupId < numGroup1) {
-      return groupId * itemPerGroup1;
+      return groupId * taskPerGroup1;
     } else {
-      return groupId * itemPerGroup1 + (groupId - numGroup1);
+      return groupId * taskPerGroup1 + (groupId - numGroup1);
     }
   }
 
-  public int getNumItemsInGroup(int groupId) {
+  public int getNumTasksInGroup(int groupId) {
     Preconditions.checkArgument(0 <= groupId && groupId < numGroup, "Invalid groupId" + groupId);
-    return groupId < numGroup1 ? itemPerGroup1 : itemPerGroup2;
+    return groupId < numGroup1 ? taskPerGroup1 : taskPerGroup2;
   }
 
-  public int getLastItemInGroup(int groupId) {
+  public int getLastTaskInGroup(int groupId) {
     Preconditions.checkArgument(0 <= groupId && groupId < numGroup, "Invalid groupId" + groupId);
-    return getFirstItemInGroup(groupId) + getNumItemsInGroup(groupId) - 1;
+    return getFirstTaskInGroup(groupId) + getNumTasksInGroup(groupId) - 1;
   }
 
-  public int getGroupId(int itemId) {
-    Preconditions.checkArgument(0 <= itemId && itemId < numItem, "Invalid itemId" + itemId);
-    if (itemId < itemPerGroup1 * numGroup1) {
-      return itemId/ itemPerGroup1;
+  public int getGroupId(int taskId) {
+    Preconditions.checkArgument(0 <= taskId && taskId < numTask, "Invalid taskId" + taskId);
+    if (taskId < taskPerGroup1 * numGroup1) {
+      return taskId/taskPerGroup1;
     } else {
-      return numGroup1 + (itemId - itemPerGroup1 * numGroup1) / itemPerGroup2;
+      return numGroup1 + (taskId - taskPerGroup1 * numGroup1) / taskPerGroup2;
     }
   }
 
-  public boolean isInGroup(int itemId, int groupId) {
+  public boolean isInGroup(int taskId, int groupId) {
     Preconditions.checkArgument(0 <= groupId && groupId < numGroup, "Invalid groupId" + groupId);
-    Preconditions.checkArgument(0 <= itemId && itemId < numItem, "Invalid itemId" + itemId);
-    return getFirstItemInGroup(groupId) <= itemId
-      && itemId < getFirstItemInGroup(groupId) + getNumItemsInGroup(groupId);
+    Preconditions.checkArgument(0 <= taskId && taskId < numTask, "Invalid taskId" + taskId);
+    return getFirstTaskInGroup(groupId) <= taskId
+      && taskId < getFirstTaskInGroup(groupId) + getNumTasksInGroup(groupId);
   }
 }

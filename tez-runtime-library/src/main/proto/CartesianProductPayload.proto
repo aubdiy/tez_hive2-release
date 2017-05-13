@@ -27,12 +27,9 @@ message CartesianProductConfigProto {
     optional bytes filterUserPayload = 5;
     optional float minFraction = 6;
     optional float maxFraction = 7;
-    optional int32 maxParallelism = 8;
-    optional int64 minOpsPerWorker = 9;
+    optional bool enableAutoGrouping = 8;
+    optional int64 desiredBytesPerChunk = 9;
     repeated int32 numChunks = 10;
-    repeated int32 numTaskPerVertexInGroup = 11;
-    optional int32 positionInGroup = 12;
-    optional int32 numPartitionsForFairCase = 13;
-    optional bool enableGrouping = 14;
-    optional float groupingFraction = 15;
+    optional int32 numChunk = 11;
+    optional int32 chunkIdOffset = 12;
 }

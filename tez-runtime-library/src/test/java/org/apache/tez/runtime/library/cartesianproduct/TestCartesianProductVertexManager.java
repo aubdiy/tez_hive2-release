@@ -97,7 +97,7 @@ public class TestCartesianProductVertexManager {
     config = new CartesianProductConfig(sourceVertices);
     vertexManager.initialize();
     assertTrue(vertexManager.getVertexManagerReal()
-      instanceof FairCartesianProductVertexManager);
+      instanceof CartesianProductVertexManagerUnpartitioned);
   }
 
   @Test(timeout = 5000)

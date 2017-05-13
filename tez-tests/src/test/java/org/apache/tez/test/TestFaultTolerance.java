@@ -814,11 +814,8 @@ public class TestFaultTolerance {
     String[] sourceVertices = {"v1", "v2"};
     CartesianProductConfig cartesianProductConfig =
       new CartesianProductConfig(Arrays.asList(sourceVertices));
-    TezConfiguration tezConf = new TezConfiguration();
-    tezConf.setInt(CartesianProductVertexManager.TEZ_CARTESIAN_PRODUCT_NUM_PARTITIONS, 1);
-    tezConf.setBoolean(CartesianProductVertexManager.TEZ_CARTESIAN_PRODUCT_ENABLE_GROUPING, false);
     UserPayload cartesianProductPayload =
-      cartesianProductConfig.toUserPayload(tezConf);
+      cartesianProductConfig.toUserPayload(new TezConfiguration());
 
     v3.setVertexManagerPlugin(
       VertexManagerPluginDescriptor.create(CartesianProductVertexManager.class.getName())

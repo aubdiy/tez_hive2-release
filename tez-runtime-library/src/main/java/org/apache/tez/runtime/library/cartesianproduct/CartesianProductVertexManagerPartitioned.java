@@ -27,12 +27,10 @@ import org.apache.tez.dag.api.event.VertexState;
 import org.apache.tez.dag.api.event.VertexStateUpdate;
 import org.apache.tez.runtime.api.TaskAttemptIdentifier;
 import org.apache.tez.runtime.api.events.VertexManagerEvent;
-import org.apache.tez.runtime.library.cartesianproduct.CartesianProductUserPayload.CartesianProductConfigProto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.EnumSet;
@@ -45,9 +43,8 @@ import java.util.Map;
  * min fraction and schedules all task when max fraction is reached
  */
 class CartesianProductVertexManagerPartitioned extends CartesianProductVertexManagerReal {
+  private CartesianProductVertexManagerConfig config;
   private List<String> sourceVertices;
-  private int[] numPartitions;
-  private float minFraction, maxFraction;
   private int parallelism = 0;
   private boolean vertexStarted = false;
   private boolean vertexReconfigured = false;
@@ -67,26 +64,19 @@ class CartesianProductVertexManagerPartitioned extends CartesianProductVertexMan
   }
 
   @Override
-  public void initialize(CartesianProductConfigProto config) throws TezReflectionException {
-    this.sourceVertices = config.getSourcesList();
-    this.numPartitions = Ints.toArray(config.getNumPartitionsList());
-    this.minFraction = config.hasMinFraction() ? config.getMinFraction()
-      : CartesianProductVertexManager.TEZ_CARTESIAN_PRODUCT_SLOW_START_MIN_FRACTION_DEFAULT;
-    this.maxFraction = config.hasMaxFraction() ? config.getMaxFraction()
-      : CartesianProductVertexManager.TEZ_CARTESIAN_PRODUCT_SLOW_START_MAX_FRACTION_DEFAULT;
-
-    if (config.hasFilterClassName()) {
-      UserPayload userPayload = config.hasFilterUserPayload()
-        ? UserPayload.create(ByteBuffer.wrap(config.getFilterUserPayload().toByteArray())) : null;
+  public void initialize(CartesianProductVertexManagerConfig config) throws TezReflectionException {
+    this.config = config;
+    this.sourceVertices = config.getSourceVertices();
+    CartesianProductFilterDescriptor filterDescriptor = config.getFilterDescriptor();
+    if (filterDescriptor != null) {
       try {
-        filter = ReflectionUtils.createClazzInstance(config.getFilterClassName(),
-          new Class[]{UserPayload.class}, new UserPayload[]{userPayload});
+        filter = ReflectionUtils.createClazzInstance(filterDescriptor.getClassName(),
+          new Class[]{UserPayload.class}, new UserPayload[]{filterDescriptor.getUserPayload()});
       } catch (TezReflectionException e) {
         LOG.error("Creating filter failed");
         throw e;
       }
     }
-
     for (String sourceVertex : sourceVertices) {
       sourceTaskCompleted.put(sourceVertex, new BitSet());
     }
@@ -157,7 +147,7 @@ class CartesianProductVertexManagerPartitioned extends CartesianProductVertexMan
     Map<String, Integer> vertexPartitionMap = new HashMap<>();
 
     CartesianProductCombination combination =
-      new CartesianProductCombination(numPartitions);
+      new CartesianProductCombination(Ints.toArray(config.getNumPartitions()));
     combination.firstTask();
     do {
       for (int i = 0; i < sourceVertices.size(); i++) {
@@ -184,12 +174,12 @@ class CartesianProductVertexManagerPartitioned extends CartesianProductVertexMan
     // determine the destination task with largest id to schedule
     float percentFinishedSrcTask = numFinishedSrcTasks*1f/totalNumSrcTasks;
     int numTaskToSchedule;
-    if (percentFinishedSrcTask < minFraction) {
+    if (percentFinishedSrcTask < config.minFraction) {
       numTaskToSchedule = 0;
-    } else if (minFraction <= percentFinishedSrcTask &&
-      percentFinishedSrcTask <= maxFraction) {
-      numTaskToSchedule = (int) ((percentFinishedSrcTask - minFraction)
-        /(maxFraction - minFraction) * parallelism);
+    } else if (config.minFraction <= percentFinishedSrcTask &&
+        percentFinishedSrcTask <= config.maxFraction) {
+      numTaskToSchedule = (int) ((percentFinishedSrcTask-config.minFraction)
+        /(config.maxFraction-config.minFraction)*parallelism);
     } else {
       numTaskToSchedule = parallelism;
     }

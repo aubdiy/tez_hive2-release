@@ -51,8 +51,6 @@ import org.apache.tez.common.counters.TezCounter;
 import org.apache.tez.common.counters.TezCounters;
 import org.apache.tez.dag.api.client.StatusGetOpts;
 import org.apache.tez.dag.api.client.VertexStatus;
-import org.apache.tez.mapreduce.examples.CartesianProduct;
-import org.apache.tez.runtime.library.cartesianproduct.CartesianProductVertexManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -1283,14 +1281,5 @@ public class TestTezJobs {
     }
   }
 
-  @Test(timeout = 60000)
-  public void testCartesianProduct() throws Exception {
-    LOG.info("Running CartesianProduct Test");
-    CartesianProduct job = new CartesianProduct();
 
-    TezConfiguration tezConf = new TezConfiguration(mrrTezCluster.getConfig());
-    tezConf.setInt(CartesianProductVertexManager.TEZ_CARTESIAN_PRODUCT_MAX_PARALLELISM, 10);
-    tezConf.setInt(CartesianProductVertexManager.TEZ_CARTESIAN_PRODUCT_MIN_OPS_PER_WORKER, 25);
-    Assert.assertEquals("CartesianProduct failed", job.run(tezConf, null, null), 0);
-  }
 }
