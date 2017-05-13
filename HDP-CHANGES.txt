@@ -12,6 +12,7 @@ NEW FEATURES
 
 IMPROVEMENTS
 
+  TEZ-3715. BUG-76373. Differentiate between TaskAttempt submission and TaskAttempt
   TEZ-3700. BUG-79791. Consumer attempt should kill itself instead of failing during validation checks with final merge avoidance.
   TEZ-3284. BUG-80166. Avoid synchronization for every write in UnorderdKVWriter.
   TEZ-3494. (BUG-73376) Support relative url for tez-ui.history-url.base config (hitesh via sree)

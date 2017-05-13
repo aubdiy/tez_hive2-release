@@ -152,6 +152,7 @@ import org.apache.tez.dag.app.dag.event.DAGEventType;
 import org.apache.tez.dag.app.dag.event.TaskAttemptEvent;
 import org.apache.tez.dag.app.dag.event.TaskAttemptEventAttemptFailed;
 import org.apache.tez.dag.app.dag.event.TaskAttemptEventSchedule;
+import org.apache.tez.dag.app.dag.event.TaskAttemptEventSubmitted;
 import org.apache.tez.dag.app.dag.event.TaskAttemptEventStartedRemotely;
 import org.apache.tez.dag.app.dag.event.TaskAttemptEventType;
 import org.apache.tez.dag.app.dag.event.TaskEvent;
@@ -3644,7 +3645,8 @@ public class TestVertexImpl {
     containers.addContainerIfNew(container, 0, 0, 0);
     doReturn(containers).when(appContext).getAllContainers();
 
-    ta.handle(new TaskAttemptEventStartedRemotely(ta.getID(), contId, null));
+    ta.handle(new TaskAttemptEventSubmitted(ta.getID(), contId));
+    ta.handle(new TaskAttemptEventStartedRemotely(ta.getID()));
     Assert.assertEquals(TaskAttemptStateInternal.RUNNING, ta.getInternalState());
     ta.handle(new TaskAttemptEventAttemptFailed(ta.getID(), TaskAttemptEventType.TA_FAILED,
         TaskFailureType.NON_FATAL,
@@ -3678,7 +3680,8 @@ public class TestVertexImpl {
     containers.addContainerIfNew(container, 0, 0, 0);
     doReturn(containers).when(appContext).getAllContainers();
 
-    ta.handle(new TaskAttemptEventStartedRemotely(ta.getID(), contId, null));
+    ta.handle(new TaskAttemptEventSubmitted(ta.getID(), contId));
+    ta.handle(new TaskAttemptEventStartedRemotely(ta.getID()));
     Assert.assertEquals(TaskAttemptStateInternal.RUNNING, ta.getInternalState());
 
     ta.handle(new TaskAttemptEventAttemptFailed(ta.getID(), TaskAttemptEventType.TA_FAILED,
@@ -3714,7 +3717,8 @@ public class TestVertexImpl {
     containers.addContainerIfNew(container, 0, 0, 0);
     doReturn(containers).when(appContext).getAllContainers();
 
-    ta.handle(new TaskAttemptEventStartedRemotely(ta.getID(), contId, null));
+    ta.handle(new TaskAttemptEventSubmitted(ta.getID(), contId));
+    ta.handle(new TaskAttemptEventStartedRemotely(ta.getID()));
     Assert.assertEquals(TaskAttemptStateInternal.RUNNING, ta.getInternalState());
 
     ta.handle(new TaskAttemptEventAttemptFailed(ta.getID(), TaskAttemptEventType.TA_FAILED,
@@ -6985,14 +6989,16 @@ public class TestVertexImpl {
     Assert.assertEquals(v.getLastTaskFinishTime(), -1);
 
     taskAttempt0.handle(new TaskAttemptEventSchedule(taskAttemptId0, 0, 0));
-    taskAttempt0.handle(new TaskAttemptEventStartedRemotely(taskAttemptId0, contId, null));
+    taskAttempt0.handle(new TaskAttemptEventSubmitted(taskAttemptId0, contId));
+    taskAttempt0.handle(new TaskAttemptEventStartedRemotely(taskAttemptId0));
     taskAttempt0.handle(new TaskAttemptEvent(taskAttemptId0, TaskAttemptEventType.TA_DONE));
     //task0.handle(new TaskEventTAUpdate(taskAttemptId0, TaskEventType.T_ATTEMPT_SUCCEEDED));
 
     Assert.assertEquals(v.getLastTaskFinishTime(), -1);
 
     taskAttempt1.handle(new TaskAttemptEventSchedule(taskAttemptId1, 0, 0));
-    taskAttempt1.handle(new TaskAttemptEventStartedRemotely(taskAttemptId1, contId, null));
+    taskAttempt1.handle(new TaskAttemptEventSubmitted(taskAttemptId1, contId));
+    taskAttempt1.handle(new TaskAttemptEventStartedRemotely(taskAttemptId1));
     taskAttempt1.handle(new TaskAttemptEvent(taskAttemptId1, TaskAttemptEventType.TA_DONE));
     //task1.handle(new TaskEventTAUpdate(taskAttemptId1, TaskEventType.T_ATTEMPT_SUCCEEDED));
 
