@@ -255,6 +255,7 @@ public class VertexImpl implements org.apache.tez.dag.app.dag.Vertex, EventHandl
   final ServicePluginInfo servicePluginInfo;
 
 
+  private final VertexConfigImpl vertexContextConfig;
   //fields initialized in init
 
   @VisibleForTesting
@@ -875,7 +876,7 @@ public class VertexImpl implements org.apache.tez.dag.app.dag.Vertex, EventHandl
         vertexOnlyConf.set(keyValuePair.getKey(), keyValuePair.getValue());
       }
     }
-
+    this.vertexContextConfig = new VertexConfigImpl(vertexConf);
 
     this.clock = clock;
     this.appContext = appContext;
@@ -1297,6 +1298,11 @@ public class VertexImpl implements org.apache.tez.dag.app.dag.Vertex, EventHandl
     } finally {
       readLock.unlock();
     }
+  }
+
+  @Override
+  public VertexConfig getVertexConfig() {
+    return vertexContextConfig;
   }
 
   boolean inTerminalState() {
@@ -4555,6 +4561,31 @@ public class VertexImpl implements org.apache.tez.dag.app.dag.Vertex, EventHandl
       this.fullCounters = counters;
     } finally {
       writeLock.unlock();
+    }
+  }
+
+  @VisibleForTesting
+  static class VertexConfigImpl implements VertexConfig {
+
+    private final int maxFailedTaskAttempts;
+    private final boolean taskRescheduleHigherPriority;
+
+    public VertexConfigImpl(Configuration conf) {
+      this.maxFailedTaskAttempts = conf.getInt(TezConfiguration.TEZ_AM_TASK_MAX_FAILED_ATTEMPTS,
+          TezConfiguration.TEZ_AM_TASK_MAX_FAILED_ATTEMPTS_DEFAULT);
+      this.taskRescheduleHigherPriority =
+          conf.getBoolean(TezConfiguration.TEZ_AM_TASK_RESCHEDULE_HIGHER_PRIORITY,
+              TezConfiguration.TEZ_AM_TASK_RESCHEDULE_HIGHER_PRIORITY_DEFAULT);
+    }
+
+    @Override
+    public int getMaxFailedTaskAttempts() {
+      return maxFailedTaskAttempts;
+    }
+
+    @Override
+    public boolean getTaskRescheduleHigherPriority() {
+      return taskRescheduleHigherPriority;
     }
   }
 }

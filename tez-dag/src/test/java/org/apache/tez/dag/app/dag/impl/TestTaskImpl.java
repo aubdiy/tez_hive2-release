@@ -167,6 +167,7 @@ public class TestTaskImpl {
     containerContext = new ContainerContext(localResources, credentials,
         environment, javaOpts);
     Vertex vertex = mock(Vertex.class);
+    doReturn(new VertexImpl.VertexConfigImpl(conf)).when(vertex).getVertexConfig();
     eventHandler = new TestEventHandler();
     
     mockTask = new MockTaskImpl(vertexId, partition,
@@ -781,10 +782,12 @@ public class TestTaskImpl {
   @Test(timeout = 20000)
   public void testFailedThenSpeculativeFailed() {
     conf.setInt(TezConfiguration.TEZ_AM_TASK_MAX_FAILED_ATTEMPTS, 1);
+    Vertex vertex = mock(Vertex.class);
+    doReturn(new VertexImpl.VertexConfigImpl(conf)).when(vertex).getVertexConfig();
     mockTask = new MockTaskImpl(vertexId, partition,
         eventHandler, conf, taskCommunicatorManagerInterface, clock,
         taskHeartbeatHandler, appContext, leafVertex,
-        taskResource, containerContext, mock(Vertex.class));
+        taskResource, containerContext, vertex);
     TezTaskID taskId = getNewTaskID();
     scheduleTaskAttempt(taskId);
     MockTaskAttemptImpl firstAttempt = mockTask.getLastAttempt();
@@ -814,10 +817,12 @@ public class TestTaskImpl {
   @Test(timeout = 20000)
   public void testFailedThenSpeculativeSucceeded() {
     conf.setInt(TezConfiguration.TEZ_AM_TASK_MAX_FAILED_ATTEMPTS, 1);
+    Vertex vertex = mock(Vertex.class);
+    doReturn(new VertexImpl.VertexConfigImpl(conf)).when(vertex).getVertexConfig();
     mockTask = new MockTaskImpl(vertexId, partition,
         eventHandler, conf, taskCommunicatorManagerInterface, clock,
         taskHeartbeatHandler, appContext, leafVertex,
-        taskResource, containerContext, mock(Vertex.class));
+        taskResource, containerContext, vertex);
     TezTaskID taskId = getNewTaskID();
     scheduleTaskAttempt(taskId);
     MockTaskAttemptImpl firstAttempt = mockTask.getLastAttempt();
