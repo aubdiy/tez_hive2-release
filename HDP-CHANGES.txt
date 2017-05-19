@@ -12,6 +12,12 @@ NEW FEATURES
 
 IMPROVEMENTS
 
+  TEZ-3207. Add support for fetching multiple partitions from the same source task to UnorderedKVInput. Contributed by Ming Ma.
+  TEZ-3708. Improve parallelism and auto grouping of unpartitioned cartesian product (zhiyuany)
+  TEZ-3206. Have unordered partitioned KV output send partition stats via VertexManagerEvent. Contributed by Ming Ma.
+  TEZ-3654. Make CartesianProduct edge work with GroupInputEdge (zhiyuany)
+  TEZ-3697. Adding #output_record in vertex manager event payload (zhiyuany)
+  TEZ-3550. BUG-69635. Provide access to sessionId/dagId via DagClient. (sseth)
   TEZ-3716. BUG-76373. Allow attempt retries to be treated the same as the first attempt
   TEZ-3715. BUG-76373. Differentiate between TaskAttempt submission and TaskAttempt
   TEZ-3700. BUG-79791. Consumer attempt should kill itself instead of failing during validation checks with final merge avoidance.
@@ -30,6 +36,7 @@ IMPROVEMENTS
 
 BUG FIXES
 
+  TEZ-3719. (BUG-80738) DAGImpl.computeProgress slows down dispatcher and ipc threads (Gopal V via jeagles)
   TEZ-3644. (BUG-76200) Cleanup container list stored in AMNode. (sseth)
   TEZ-3643. (BUG-76200) Long running AMs can go out of memory due to retained AMContainer instances. (sseth)
   TEZ-3637. (BUG-72438) TezMerger logs too much at INFO level. (sseth)
