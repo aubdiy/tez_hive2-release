@@ -36,6 +36,8 @@ IMPROVEMENTS
 
 BUG FIXES
 
+  TEZ-3795. (BUG-85228) Vertex state machine can throw InvalidStateTransitonException from TERMINATING state
+  TEZ-3748. (BUG-85229) TaskAttemptImpl State Machine Invalid event: TA_SUBMITTED at KILL_IN_PROGRESS
   TEZ-3784. (BUG-84794) Submitting very large DAG throws com.google.protobuf.CodedInputStream exception
   TEZ-3245 (TEZ-3207). Data race between addKnowInput and clearAndGetOnepartition of InputHost
   TEZ-3719. (BUG-80738) DAGImpl.computeProgress slows down dispatcher and ipc threads (Gopal V via jeagles)
