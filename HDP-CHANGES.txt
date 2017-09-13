@@ -37,6 +37,7 @@ IMPROVEMENTS
 
 BUG FIXES
 
+  TEZ-3767. (BUG-82940) Shuffle should not report error to AM during inputContext.killSelf()
   TEZ-3784. (BUG-84794) Submitting very large DAG throws com.google.protobuf.CodedInputStream exception
   TEZ-3245 (TEZ-3207). Data race between addKnowInput and clearAndGetOnepartition of InputHost
   TEZ-3719. (BUG-80738) DAGImpl.computeProgress slows down dispatcher and ipc threads (Gopal V via jeagles)
