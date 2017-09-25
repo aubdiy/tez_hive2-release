@@ -13,6 +13,7 @@ NEW FEATURES
 
 IMPROVEMENTS
 
+  TEZ-3703. (BUG-87833) Use a sha comparison to compare vertex and dag resources, if there is a mismatch
   TEZ-3207. Add support for fetching multiple partitions from the same source task to UnorderedKVInput. Contributed by Ming Ma.
   TEZ-3708. Improve parallelism and auto grouping of unpartitioned cartesian product (zhiyuany)
   TEZ-3206. Have unordered partitioned KV output send partition stats via VertexManagerEvent. Contributed by Ming Ma.
