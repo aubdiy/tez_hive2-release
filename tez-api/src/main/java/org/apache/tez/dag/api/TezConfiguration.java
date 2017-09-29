@@ -697,7 +697,7 @@ public class TezConfiguration extends Configuration {
   @ConfigurationProperty(type="integer")
   public static final String TEZ_AM_RM_HEARTBEAT_INTERVAL_MS_MAX = TEZ_AM_PREFIX
       + "am-rm.heartbeat.interval-ms.max";
-  public static final int TEZ_AM_RM_HEARTBEAT_INTERVAL_MS_MAX_DEFAULT = 1000;
+  public static final int TEZ_AM_RM_HEARTBEAT_INTERVAL_MS_MAX_DEFAULT = 2000;
 
   /**
    * Int value. The maximum amount of time, in milliseconds, to wait before a task asks an
