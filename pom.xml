@@ -57,6 +57,7 @@
     <findbugs-maven-plugin.version>3.0.1</findbugs-maven-plugin.version>
     <javadoc-maven-plugin.version>2.10.4</javadoc-maven-plugin.version>
     <adl.sdk.version>2.1.4</adl.sdk.version>
+    <gcs.version>1.8.1.2.6.5.0-SNAPSHOT</gcs.version>
   </properties>
   <scm>
     <connection>${scm.url}</connection>
@@ -1249,6 +1250,56 @@
           <groupId>com.microsoft.azure</groupId>
           <artifactId>azure-data-lake-store-sdk</artifactId>
           <version>${adl.sdk.version}</version>
+        </dependency>
+      </dependencies>
+    </profile>
+
+    <profile>
+      <activation>
+        <activeByDefault>false</activeByDefault>
+      </activation>
+      <id>gcs</id>
+      <dependencies>
+        <dependency>
+          <groupId>com.google.cloud.bigdataoss</groupId>
+          <artifactId>gcs-connector</artifactId>
+          <classifier>shaded</classifier>
+          <scope>runtime</scope>
+          <version>${gcs.version}</version>
+          <exclusions>
+            <exclusion>
+              <groupId>com.google.api-client</groupId>
+              <artifactId>google-api-client-java6</artifactId>
+            </exclusion>
+            <exclusion>
+              <groupId>com.google.api-client</groupId>
+              <artifactId>google-api-client-jackson2</artifactId>
+            </exclusion>
+            <exclusion>
+              <groupId>com.google.apis</groupId>
+              <artifactId>google-api-services-storage</artifactId>
+            </exclusion>
+            <exclusion>
+              <groupId>com.google.oauth-client</groupId>
+              <artifactId>google-oauth-client</artifactId>
+            </exclusion>
+            <exclusion>
+              <groupId>com.google.oauth-client</groupId>
+              <artifactId>google-oauth-client-java6</artifactId>
+            </exclusion>
+            <exclusion>
+              <groupId>com.google.cloud.bigdataoss</groupId>
+              <artifactId>util</artifactId>
+            </exclusion>
+            <exclusion>
+              <groupId>com.google.cloud.bigdataoss</groupId>
+              <artifactId>gcsio</artifactId>
+            </exclusion>
+            <exclusion>
+              <groupId>com.google.cloud.bigdataoss</groupId>
+              <artifactId>util-hadoop</artifactId>
+            </exclusion>
+          </exclusions>
         </dependency>
       </dependencies>
     </profile>
