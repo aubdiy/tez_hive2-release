@@ -110,6 +110,7 @@ public class TestTezClient {
     YarnClient mockYarnClient;
     ApplicationId mockAppId;
     boolean callRealGetSessionAMProxy;
+    Long prewarmTimeoutMs;
 
     public TezClientForTest(String name, TezConfiguration tezConf,
         @Nullable Map<String, LocalResource> localResources,
@@ -130,6 +131,15 @@ public class TestTezClient {
       }
       return super.getAMProxy(appId);
     }
+
+    public void setPrewarmTimeoutMs(Long prewarmTimeoutMs) {
+      this.prewarmTimeoutMs = prewarmTimeoutMs;
+    }
+
+    @Override
+    protected long getPrewarmWaitTimeMs() {
+      return prewarmTimeoutMs == null ? super.getPrewarmWaitTimeMs() : prewarmTimeoutMs;
+    }
   }
   
   TezClientForTest configureAndCreateTezClient() throws YarnException, IOException, ServiceException {
@@ -141,10 +151,19 @@ public class TestTezClient {
     return configureAndCreateTezClient(new HashMap<String, LocalResource>(), true, conf);
   }
   
+  TezClientForTest configureAndCreateTezClient(
+    Map<String, LocalResource> lrs, boolean isSession, TezConfiguration conf)
+      throws YarnException, IOException, ServiceException {
+    return configureAndCreateTezClient(lrs, isSession, conf, false);
+  }
+
   TezClientForTest configureAndCreateTezClient(Map<String, LocalResource> lrs, boolean isSession,
-                                               TezConfiguration conf) throws YarnException, IOException, ServiceException {
+                                               TezConfiguration conf, boolean isLocalMode) throws YarnException, IOException, ServiceException {
     if (conf == null) {
       conf = new TezConfiguration();
+    }
+    if (isLocalMode) {
+      conf.setBoolean(TezConfiguration.TEZ_LOCAL_MODE, true);
     }
     conf.setBoolean(TezConfiguration.TEZ_IGNORE_LIB_URIS, true);
     conf.setBoolean(TezConfiguration.TEZ_AM_SESSION_MODE, isSession);
@@ -354,7 +373,7 @@ public class TestTezClient {
 
   @Test (timeout=5000)
   public void testPreWarm() throws Exception {
-    TezClientForTest client = configureAndCreateTezClient();
+    TezClientForTest client = configureAndCreateTezClient(new HashMap<String, LocalResource>(), true, null, true);
     client.start();
 
     when(client.mockYarnClient.getApplicationReport(client.mockAppId).getYarnApplicationState())
@@ -376,6 +395,25 @@ public class TestTezClient {
     client.stop();
   }
 
+
+  @Test (timeout=5000)
+  public void testPreWarmCloseStuck() throws Exception {
+    TezClientForTest client = configureAndCreateTezClient(new HashMap<String, LocalResource>(), true, null, true);
+    client.setPrewarmTimeoutMs(10L); // Don't wait too long.
+    client.start();
+
+    when(client.mockYarnClient.getApplicationReport(client.mockAppId).getYarnApplicationState())
+        .thenReturn(YarnApplicationState.RUNNING);
+    when(client.sessionAmProxy.getAMStatus((RpcController) any(), (GetAMStatusRequestProto) any()))
+        .thenReturn(GetAMStatusResponseProto.newBuilder().setStatus(TezAppMasterStatusProto.READY).build());
+
+    PreWarmVertex vertex = PreWarmVertex.create("PreWarm", 1, Resource.newInstance(1, 1));
+    client.preWarm(vertex);
+    // Keep prewarm in "running" state. Client should give up waiting; if it doesn't, the test will time out.
+    client.stop();
+  }
+
+
   private void setClientToReportStoppedDags(TezClientForTest client) throws Exception {
     when(client.mockYarnClient.getApplicationReport(client.mockAppId).getYarnApplicationState())
       .thenReturn(YarnApplicationState.FINISHED);
@@ -390,7 +428,7 @@ public class TestTezClient {
   @Test (timeout=30000)
   public void testPreWarmWithTimeout() throws Exception {
     long startTime = 0 , endTime = 0;
-    TezClientForTest client = configureAndCreateTezClient();
+    TezClientForTest client = configureAndCreateTezClient(new HashMap<String, LocalResource>(), true, null, true);
     final TezClientForTest spyClient = spy(client);
     doCallRealMethod().when(spyClient).start();
     doCallRealMethod().when(spyClient).stop();
