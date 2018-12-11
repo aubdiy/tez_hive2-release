@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -179,6 +180,12 @@ public class TaskAttemptImpl implements TaskAttempt,
   private TaskAttemptRecoveryData recoveryData;
   private long launchTime = 0;
   private long finishTime = 0;
+  /** System.nanoTime for task launch time, if recorded in this JVM. */
+  private Long launchTimeNs;
+  /** System.nanoTime for task finish time, if recorded in this JVM. */
+  private Long finishTimeNs;
+  /** Whether the task was recovered from a prior AM; see getDurationNs. */
+  private boolean isRecoveredDuration;
   private String trackerName;
   private int httpPort;
 
@@ -797,6 +804,25 @@ public class TaskAttemptImpl implements TaskAttempt,
     }
   }
 
+
+  /** @return task runtime duration in NS. */
+  public long getDurationNs() {
+    readLock.lock();
+    try {
+      if (isRecoveredDuration) {
+        // NS values are not mappable between JVMs (per documentation, at
+        // least), so just use the clock after recovery.
+        return TimeUnit.MILLISECONDS.toNanos(launchTime == 0 ? 0
+            : (finishTime == 0 ? clock.getTime() : finishTime) - launchTime);
+      } else {
+        long ft = (finishTimeNs == null ? System.nanoTime() : finishTimeNs);
+        return (launchTimeNs == null) ? 0 : (ft - launchTimeNs);
+      }
+    } finally {
+      readLock.unlock();
+    }
+  }
+
   public long getCreationTime() {
     readLock.lock();
     try {
@@ -945,6 +971,8 @@ public class TaskAttemptImpl implements TaskAttempt,
     // set the finish time only if launch time is set
     if (launchTime != 0 && finishTime == 0) {
       finishTime = clock.getTime();
+      // The default clock is not safe for measuring durations.
+      finishTimeNs = System.nanoTime();
     }
   }
 
@@ -971,6 +999,10 @@ public class TaskAttemptImpl implements TaskAttempt,
     } else if (taState == TaskAttemptState.SUCCEEDED ) {
       jce.addCounterUpdate(DAGCounter.NUM_SUCCEEDED_TASKS, 1);
     }
+
+    long amSideWallClockTimeMs = TimeUnit.NANOSECONDS.toMillis(
+        taskAttempt.getDurationNs());
+    jce.addCounterUpdate(DAGCounter.WALL_CLOCK_MILLIS, amSideWallClockTimeMs);
 
     return jce;
   }
@@ -1046,6 +1078,14 @@ public class TaskAttemptImpl implements TaskAttempt,
 //    }
 //    */
 //  }
+
+  /**
+   * Records the launch time of the task.
+   */
+  private void setLaunchTime() {
+    launchTime = clock.getTime();
+    launchTimeNs = System.nanoTime();
+  }
 
   private void updateProgressSplits() {
 //    double newProgress = reportedStatus.progress;
@@ -1230,6 +1270,7 @@ public class TaskAttemptImpl implements TaskAttempt,
             ta.recoveryData.getTaskAttemptStartedEvent();
         if (taStartedEvent != null) {
           ta.launchTime = taStartedEvent.getStartTime();
+          ta.isRecoveredDuration = true;
           TaskAttemptFinishedEvent taFinishedEvent =
               ta.recoveryData.getTaskAttemptFinishedEvent();
           if (taFinishedEvent == null) {
@@ -1398,6 +1439,7 @@ public class TaskAttemptImpl implements TaskAttempt,
             .getTaskAttemptState(), helper.getFailureType(event));
       } else {
         ta.finishTime = ta.recoveryData.getTaskAttemptFinishedEvent().getFinishTime();
+        ta.isRecoveredDuration = true;
       }
 
       if (event instanceof RecoveryEvent) {
@@ -1433,7 +1475,7 @@ public class TaskAttemptImpl implements TaskAttempt,
       ta.nodeRackName = StringInterner.weakIntern(RackResolver.resolve(ta.containerNodeId.getHost())
           .getNetworkLocation());
 
-      ta.launchTime = ta.clock.getTime();
+      ta.setLaunchTime();
 
       // TODO Resolve to host / IP in case of a local address.
       InetSocketAddress nodeHttpInetAddr = NetUtils
@@ -1640,6 +1682,7 @@ public class TaskAttemptImpl implements TaskAttempt,
           ta.sendEvent(new VertexEventRouteEvent(ta.getVertexID(), tezEvents));
         }
         ta.finishTime = taFinishedEvent.getFinishTime();
+        ta.isRecoveredDuration = true;
       } else {
         ta.setFinishTime();
         // Send out history event.
