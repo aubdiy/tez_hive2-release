@@ -30,11 +30,11 @@ import org.apache.tez.runtime.library.common.Constants;
 
 public class DeprecatedKeys {
 
-  
-  
+
+
   // This could be done via deprecation.
   /**
-   * Keys used by the DAG - mainly the AM. 
+   * Keys used by the DAG - mainly the AM.
    */
   private static Map<String, String> mrParamToDAGParamMap = new HashMap<String, String>();
 
@@ -44,8 +44,8 @@ public class DeprecatedKeys {
   private static Map<String, String> mrParamToTezRuntimeParamMap =
       new HashMap<String, String>();
 
-  
- 
+
+
   static {
     populateMRToTezRuntimeParamMap();
     populateMRToDagParamMap();
@@ -56,7 +56,7 @@ public class DeprecatedKeys {
     // TODO Default value handling.
     mrParamToDAGParamMap.put(MRJobConfig.MR_AM_TASK_LISTENER_THREAD_COUNT,
         TezConfiguration.TEZ_AM_TASK_LISTENER_THREAD_COUNT);
-    
+
     mrParamToDAGParamMap.put(MRJobConfig.MAX_TASK_FAILURES_PER_TRACKER,
         TezConfiguration.TEZ_AM_MAX_TASK_FAILURES_PER_NODE);
     mrParamToDAGParamMap.put(MRJobConfig.MR_AM_JOB_NODE_BLACKLISTING_ENABLE,
@@ -86,14 +86,18 @@ public class DeprecatedKeys {
         TezConfiguration.TASK_HEARTBEAT_TIMEOUT_MS);
     mrParamToDAGParamMap.put(MRJobConfig.JOB_TAGS,
         TezConfiguration.TEZ_APPLICATION_TAGS);
+    mrParamToDAGParamMap.put(MRJobConfig.JOB_NAMENODES,
+            TezConfiguration.TEZ_JOB_FS_SERVERS);
+    mrParamToDAGParamMap.put(MRJobConfig.JOB_NAMENODES_TOKEN_RENEWAL_EXCLUDE,
+            TezConfiguration.TEZ_JOB_FS_SERVERS_TOKEN_RENEWAL_EXCLUDE);
   }
 
   // TODO TEZAM4 Sometime, make sure this gets loaded by default. Instead of the current initialization in MRAppMaster, TezChild.
   // Maybe define in an TEZConfiguration / TEZ JobConf variant.
-  
+
   public static void init() {
   }
-  
+
   private static void populateMRToTezRuntimeParamMap() {
 
     registerMRToRuntimeKeyTranslation(MRConfig.MAPRED_IFILE_READAHEAD, TezRuntimeConfiguration.TEZ_RUNTIME_IFILE_READAHEAD);
@@ -103,49 +107,49 @@ public class DeprecatedKeys {
     registerMRToRuntimeKeyTranslation(MRJobConfig.RECORDS_BEFORE_PROGRESS, TezRuntimeConfiguration.TEZ_RUNTIME_RECORDS_BEFORE_PROGRESS);
 
     registerMRToRuntimeKeyTranslation(MRJobConfig.IO_SORT_FACTOR, TezRuntimeConfiguration.TEZ_RUNTIME_IO_SORT_FACTOR);
-    
+
     registerMRToRuntimeKeyTranslation(MRJobConfig.MAP_SORT_SPILL_PERCENT, TezRuntimeConfiguration.TEZ_RUNTIME_SORT_SPILL_PERCENT);
-    
+
     registerMRToRuntimeKeyTranslation(MRJobConfig.IO_SORT_MB, TezRuntimeConfiguration.TEZ_RUNTIME_IO_SORT_MB);
-    
+
     registerMRToRuntimeKeyTranslation(MRJobConfig.INDEX_CACHE_MEMORY_LIMIT, TezRuntimeConfiguration.TEZ_RUNTIME_INDEX_CACHE_MEMORY_LIMIT_BYTES);
-    
+
     registerMRToRuntimeKeyTranslation(MRJobConfig.MAP_COMBINE_MIN_SPILLS, TezRuntimeConfiguration.TEZ_RUNTIME_COMBINE_MIN_SPILLS);
-    
+
     registerMRToRuntimeKeyTranslation(MRJobConfig.REDUCE_MEMORY_TOTAL_BYTES, Constants.TEZ_RUNTIME_TASK_MEMORY);
-    
+
     registerMRToRuntimeKeyTranslation(MRJobConfig.COMPLETED_MAPS_FOR_REDUCE_SLOWSTART, ShuffleVertexManager.TEZ_SHUFFLE_VERTEX_MANAGER_MIN_SRC_FRACTION);
 
     registerMRToRuntimeKeyTranslation(MRJobConfig.SHUFFLE_PARALLEL_COPIES, TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_PARALLEL_COPIES);
-    
+
     registerMRToRuntimeKeyTranslation(MRJobConfig.SHUFFLE_FETCH_FAILURES, TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_FETCH_FAILURES_LIMIT);
-    
+
     registerMRToRuntimeKeyTranslation(MRJobConfig.SHUFFLE_NOTIFY_READERROR, TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_NOTIFY_READERROR);
-    
+
     registerMRToRuntimeKeyTranslation(MRJobConfig.SHUFFLE_CONNECT_TIMEOUT, TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_CONNECT_TIMEOUT);
-    
+
     registerMRToRuntimeKeyTranslation(MRJobConfig.SHUFFLE_READ_TIMEOUT, TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_READ_TIMEOUT);
-    
+
     registerMRToRuntimeKeyTranslation(MRConfig.SHUFFLE_SSL_ENABLED_KEY, TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_ENABLE_SSL);
-    
+
     registerMRToRuntimeKeyTranslation(MRJobConfig.SHUFFLE_INPUT_BUFFER_PERCENT, TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_FETCH_BUFFER_PERCENT);
-    
+
     registerMRToRuntimeKeyTranslation(MRJobConfig.SHUFFLE_MEMORY_LIMIT_PERCENT, TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_MEMORY_LIMIT_PERCENT);
-    
+
     registerMRToRuntimeKeyTranslation(MRJobConfig.SHUFFLE_MERGE_PERCENT, TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_MERGE_PERCENT);
-    
+
     registerMRToRuntimeKeyTranslation(MRJobConfig.REDUCE_MEMTOMEM_THRESHOLD, TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_MEMTOMEM_SEGMENTS);
-    
+
     registerMRToRuntimeKeyTranslation(MRJobConfig.REDUCE_MEMTOMEM_ENABLED, TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_ENABLE_MEMTOMEM);
-    
+
     registerMRToRuntimeKeyTranslation(MRJobConfig.REDUCE_INPUT_BUFFER_PERCENT, TezRuntimeConfiguration.TEZ_RUNTIME_INPUT_POST_MERGE_BUFFER_PERCENT);
-    
+
     registerMRToRuntimeKeyTranslation("map.sort.class", TezRuntimeConfiguration.TEZ_RUNTIME_INTERNAL_SORTER_CLASS);
-    
+
     registerMRToRuntimeKeyTranslation(MRJobConfig.GROUP_COMPARATOR_CLASS, TezRuntimeConfiguration.TEZ_RUNTIME_GROUP_COMPARATOR_CLASS);
-    
+
     registerMRToRuntimeKeyTranslation(MRJobConfig.GROUP_COMPARATOR_CLASS, TezRuntimeConfiguration.TEZ_RUNTIME_KEY_SECONDARY_COMPARATOR_CLASS);
-    
+
     registerMRToRuntimeKeyTranslation(MRJobConfig.MAPREDUCE_JOB_CREDENTIALS_BINARY, TezConfiguration.TEZ_CREDENTIALS_PATH);
 
     registerMRToRuntimeKeyTranslation(MRJobConfig.KEY_COMPARATOR, TezRuntimeConfiguration.TEZ_RUNTIME_KEY_COMPARATOR_CLASS);
@@ -158,7 +162,7 @@ public class DeprecatedKeys {
 
     registerMRToRuntimeKeyTranslation(MRJobConfig.MAP_OUTPUT_COMPRESS_CODEC, TezRuntimeConfiguration.TEZ_RUNTIME_COMPRESS_CODEC);
   }
-  
+
   private static void addDeprecatedKeys() {
   }
 
@@ -166,7 +170,7 @@ public class DeprecatedKeys {
       String tezKey) {
     mrParamToTezRuntimeParamMap.put(mrKey, tezKey);
   }
-  
+
   @SuppressWarnings("unused")
   private static void _(String mrKey, String tezKey) {
     Configuration.addDeprecation(mrKey, tezKey);
